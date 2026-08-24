@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# 敏感/专有资料（不公开上传）
+# 正式考试卷及答案
+亚马逊运营助理入门考试-答题版.html
+亚马逊运营助理入门考试-含参考答案.pdf
+# 生成脚本（内含答案数据）
+_build_course.py
+_build_exam.py
+_build_exam_practice.py
+# 课程文件（专有内容）
+亚马逊北美站纯新手入门课程.docx
+亚马逊北美站运营助理新手入门课程.docx
+亚马逊北美站运营助理新手入门课程.pdf

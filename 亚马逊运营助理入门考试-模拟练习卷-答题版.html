@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>亚马逊北美站运营助理入门考试（模拟练习卷·扩充版）</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif; margin: 0; background: #f4f5f7; color: #231f20; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 16px 16px 60px; }
+  header { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 2px solid #E47911;
+           display: flex; justify-content: space-between; align-items: center; gap: 12px;
+           padding: 10px 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; color: #C45500; }
+  header .meta { margin: 2px 0 0; font-size: 12px; color: #777; }
+  .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .timerbox { text-align: right; }
+  .timerbox .label { font-size: 12px; color: #666; }
+  #timer { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; color: #231f20; }
+  body.timeup #timer { color: #c00; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .3; } }
+  button { font-family: inherit; font-size: 13px; padding: 7px 12px; border: 1px solid #ccc; border-radius: 6px;
+           background: #fff; cursor: pointer; }
+  button:hover { border-color: #E47911; color: #C45500; }
+  button.primary { background: #E47911; color: #fff; border-color: #E47911; font-weight: 700; }
+  button.primary:hover { background: #c96a0e; color: #fff; }
+  input[type=text], input[type=number], textarea { font-family: inherit; font-size: 14px; }
+  .info { display: flex; gap: 24px; flex-wrap: wrap; background: #fff; padding: 12px 16px; margin: 14px 0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .info label { font-size: 14px; }
+  .info input { padding: 6px 8px; border: 1px solid #bbb; border-radius: 5px; width: 180px; }
+  section { background: #fff; margin: 14px 0; padding: 14px 18px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  section h2 { margin: 0 0 10px; font-size: 15px; color: #C45500; border-left: 4px solid #E47911; padding-left: 8px; }
+  .q { margin: 10px 0 16px; }
+  .qt { font-size: 14px; margin-bottom: 6px; }
+  .opt { display: block; font-size: 14px; padding: 2px 0 2px 6px; cursor: pointer; }
+  .opt.wrong { color: #7a1f1f; font-weight: 700; background: #fbe4e4; border: 2px solid #b02a2a; border-radius: 6px; padding: 5px 9px; margin: 3px 0; }
+  .opt.wrong::before { content: '\2716 '; color: #b02a2a; font-weight: 900; }
+  .opt.correct {
+    color: #053d2a; font-weight: 700;
+    background: #d6f2e1;
+    border: 2px solid #0f6b5f;
+    border-radius: 6px;
+    padding: 5px 9px;
+    margin: 3px 0;
+  }
+  .opt.correct::before { content: '\2714 '; color: #0f6b5f; font-weight: 900; }
+  .marktag {
+    color: #7a1f1f; background: #fbe4e4; border: 1px solid #b02a2a;
+    border-radius: 6px; padding: 4px 8px; margin-top: 6px;
+    font-size: 12px; font-weight: 700; display: inline-block;
+  }
+  .ansline.wrongfill { background: #b02a2a; border-left-color: #6d1515; }
+  body.showans .opt:not(.correct) { opacity: .4; }
+  .opt.correct {
+    color: #053d2a; font-weight: 700;
+    background: #d6f2e1;
+    border: 2px solid #0f6b5f;
+    border-radius: 6px;
+    padding: 5px 9px;
+    margin: 3px 0;
+  }
+  .opt.correct::before { content: '\2714 '; color: #0f6b5f; font-weight: 900; }
+  .ansline {
+    color: #ffffff;
+    background: #0f6b5f;
+    font-weight: 700;
+    font-size: 13px;
+    margin-top: 6px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border-left: 4px solid #053d2a;
+  }
+  .ansline::before { content: '\2714 答案：'; }
+  input.fill { width: 70%; max-width: 420px; padding: 6px 8px; border: 1px solid #bbb; border-radius: 5px; }
+  textarea { width: 100%; padding: 8px; border: 1px solid #bbb; border-radius: 5px; line-height: 1.5; }
+  .foot { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+  @media print {
+    header .toolbar, .info, .timerbox, button { display: none !important; }
+    body { background: #fff; }
+    section { box-shadow: none; border: 1px solid #ddd; }
+    header { position: static; border-bottom: 1px solid #999; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>亚马逊北美站运营助理入门考试（模拟练习卷·扩充版）</h1>
+    <p class="meta">练习扩充版 ｜ 共98题 ｜ 题量大于正式卷（42题） ｜ 与正式考试同考点、题目不同 ｜ 做完可点「显示答案」自测</p>
+  </div>
+  <div class="toolbar">
+    <div class="timerbox">
+      <div class="label">练习倒计时</div>
+      <div id="timer">90:00</div>
+    </div>
+    <div>
+      <input type="number" id="mins" value="90" min="1" max="180" style="width:64px;padding:5px;"> 分钟
+      <button onclick="applyMinutes()">设置</button>
+    </div>
+    <button id="btnTimer" onclick="toggleTimer()">开始</button>
+    <button onclick="resetTimer()">重置</button>
+    <button onclick="toggleAnswers()">显示/隐藏答案</button>
+        <button onclick="calcScore()">🧮 计分（单选+判断）</button>
+    <button class="primary" onclick="exportAnswers()">📤 导出答案</button>
+    <button onclick="clearAll()">清空重答</button>
+  </div>
+</header>
+<div class="wrap">
+  <div class="info">
+    <label>姓名：<input type="text" id="s_name" placeholder="请输入姓名"></label>
+    <label>日期：<input type="text" id="s_date" value="2026-08-30"></label>
+    <span style="font-size:12px;color:#999;align-self:center;">先做完，再点「显示答案」对照自测；错题回到课程对应章节复习。</span>
+  </div>
+    <main id="exam"></main>
+  <div id="scorePanel"></div>
+  <div class="foot">模拟练习（扩充版），与正式考试同考点、题目不同。</div>
+</div>
+<script>
+const Q = [{"name": "一、单选题（每题2分）", "type": "choice", "points": 2, "questions": [{"q": "亚马逊北美联合账号可同时开通的三个站点是？", "options": ["美国/英国/德国", "美国/加拿大/墨西哥", "美国/日本/澳大利亚", "美国/墨西哥/巴西"], "ans": "B"}, {"q": "亚马逊全球最大、新手首选的主战场站点是？", "options": ["德国站", "日本站", "美国站", "墨西哥站"], "ans": "C"}, {"q": "关于欧洲站，以下说法正确的是？", "options": ["一个账号只能卖一个国家", "一个欧洲账号可同时在英德法意西等多个国家销售", "欧洲站不需要VAT", "欧洲站与北美站完全独立、需分别注册"], "ans": "B"}, {"q": "做欧洲站通常绕不开的税务是？", "options": ["美国销售税", "增值税（VAT）", "关税", "消费税"], "ans": "B"}, {"q": "FBA产品一般带有什么标志？", "options": ["Free Shipping", "Prime", "Deal", "Coupon"], "ans": "B"}, {"q": "FBA模式下，买家退货和客服主要由谁处理？", "options": ["卖家", "亚马逊", "货代", "买家自己"], "ans": "B"}, {"q": "铺货模式的核心运营手法是？", "options": ["每款产品平均投入", "给产品分级，优先维护销量/转化/评分高的产品", "只做一款产品", "完全不做广告"], "ans": "B"}, {"q": "精品模式更倾向于哪种运营？", "options": ["大量铺货", "精细化运营（广告组合/防御/广告位调控/主图点击/全数据优化）", "不投广告", "只靠低价冲量"], "ans": "B"}, {"q": "对新手来说，最大、最重要的流量来源是？", "options": ["站外流量", "站内搜索流量", "社交媒体", "邮件营销"], "ans": "B"}, {"q": "以下哪类流量主要靠“开广告、调竞价”获得？", "options": ["搜索流量", "广告流量", "类目流量", "品牌流量"], "ans": "B"}, {"q": "美国站专业销售计划月租是？", "options": ["$19.99", "$39.99", "$59.99", "$99.99"], "ans": "B"}, {"q": "美国站大部分类目的销售佣金约为？", "options": ["5%", "15%", "25%", "40%"], "ans": "B"}, {"q": "美国站销售佣金整体区间约为？", "options": ["6%-45%", "1%-10%", "15%-30%", "20%-50%"], "ans": "A"}, {"q": "FBA配送费主要按什么收取？", "options": ["商品售价", "尺寸重量分档", "采购成本", "广告花费"], "ans": "B"}, {"q": "FBA月度仓储费在哪些月份费率更高？", "options": ["1-3月", "4-6月", "7-9月", "10-12月"], "ans": "D"}, {"q": "低库存水平费的触发条件是历史供应天数低于多少天？", "options": ["7天", "14天", "28天", "60天"], "ans": "C"}, {"q": "第三方收款工具（派安盈/万里汇/连连）提现一般收取多少手续费？", "options": ["完全免费", "约0.3%-1.2%", "约5%", "约10%"], "ans": "B"}, {"q": "2026年7月27日起，除媒体类外标题（商品名称）上限是？", "options": ["75字符", "120字符", "200字符", "250字符"], "ans": "A"}, {"q": "商品亮点（Item Highlights）的上限是？", "options": ["75字符", "100字符", "125字符", "200字符"], "ans": "C"}, {"q": "标题中禁止使用的特殊字符是？", "options": ["! $ ? _ { } ^ ¬ ¦", "逗号、句号", "括号、连字符", "@ # %"], "ans": "A"}, {"q": "标题中同一单词最多出现几次？", "options": ["1次", "2次", "3次", "不限"], "ans": "B"}, {"q": "后台Search Terms总长度不超过？", "options": ["100字节", "250字节", "500字节", "1000字节"], "ans": "B"}, {"q": "主图中产品应占画面比例至少是？", "options": ["50%", "70%", "85%", "95%"], "ans": "C"}, {"q": "主图建议尺寸（支持前台缩放）是？", "options": ["500×500", "800×800", "1600×1600", "2000×2000"], "ans": "C"}, {"q": "五点描述每条开头的写法是？", "options": ["小写关键词", "大写关键词短语概括卖点", "写促销信息", "写物流信息"], "ans": "B"}, {"q": "变体之间什么会共享？", "options": ["库存", "评论和排名", "价格", "广告预算"], "ans": "B"}, {"q": "使用A+内容的前提是？", "options": ["有100条评论", "完成品牌备案", "开通广告", "月销100单"], "ans": "B"}, {"q": "FBA产品必须贴在单件包装上的标签是？", "options": ["UPC", "ASIN", "FNSKU", "EAN"], "ans": "C"}, {"q": "首批大批量备货最划算的头程方式是？", "options": ["快递", "空运", "海运", "国际专线"], "ans": "C"}, {"q": "外箱内单件商品超过多少磅需贴Team Lift标签？", "options": ["25磅", "50磅", "75磅", "100磅"], "ans": "B"}, {"q": "外箱上贴的亚马逊收货标签叫？", "options": ["FNSKU标签", "箱唛（Shipment Label）", "UPC条码", "发票"], "ans": "B"}, {"q": "可售天数的计算公式是？", "options": ["可售库存 ÷ 日均销量", "日均销量 ÷ 可售库存", "在途库存 ÷ 日均销量", "可售库存 × 日均销量"], "ans": "A"}, {"q": "产品断货会带来什么后果？", "options": ["排名上升", "排名快速下降，恢复后需重新推", "没有任何影响", "亚马逊会自动补货"], "ans": "B"}, {"q": "SP（赞助商品）广告主要展示在哪里？", "options": ["搜索结果页和商品详情页", "仅站外", "仅首页", "仅邮件"], "ans": "A"}, {"q": "广告花费占广告销售额的比例，用哪个指标衡量？", "options": ["CTR", "CVR", "ACOS", "ROAS"], "ans": "C"}]}, {"name": "二、判断题（每题1分）", "type": "tf", "points": 1, "questions": [{"q": "亚马逊最初是靠卖书起家的。", "ans": "对"}, {"q": "加拿大站流量约为美国站的1/10左右。", "ans": "对"}, {"q": "墨西哥站新手建议重点投入。", "ans": "错"}, {"q": "欧洲站普遍需要注册VAT增值税。", "ans": "对"}, {"q": "德国、法国等欧洲国家还有EPR（生产者责任/包装法）合规要求。", "ans": "对"}, {"q": "欧盟包装法PPWR已于2026年8月12日生效。", "ans": "对"}, {"q": "FBA产品通常带Prime标志，而FBM产品一般不带。", "ans": "对"}, {"q": "铺货模式也需要给产品分级，不能每款产品平均投入。", "ans": "对"}, {"q": "新手阶段的流量主要来自站内搜索、广告、类目和推荐。", "ans": "对"}, {"q": "美国站大部分类目佣金约15%。", "ans": "对"}, {"q": "标题里写“Best Seller”可以提升排名。", "ans": "错"}, {"q": "标题首字母要大写，and/for/with等小词除外。", "ans": "对"}, {"q": "后台Search Terms应该用逗号分隔。", "ans": "错"}, {"q": "主图不能有水印、边框、文字。", "ans": "对"}, {"q": "五点描述里可以写“Free Shipping”。", "ans": "错"}, {"q": "变体违规合并、蹭他人评论属于操纵评论红线。", "ans": "对"}, {"q": "外箱可以用打包带固定。", "ans": "错"}, {"q": "单箱重量不超过50磅，除非箱内是单件本身超重的商品。", "ans": "对"}, {"q": "海运时效慢但成本低，紧急补货建议用空运。", "ans": "对"}, {"q": "断货后Listing排名会快速下降。", "ans": "对"}, {"q": "广告展示不收费，只有点击才收费（CPC）。", "ans": "对"}, {"q": "盈亏平衡ACOS ≈ 毛利率。", "ans": "对"}, {"q": "买家消息需要在24小时内回复。", "ans": "对"}, {"q": "卖家可以私下联系买家，请他把差评改成好评。", "ans": "错"}, {"q": "AHR为红色（99分及以下）说明账号面临停用风险。", "ans": "对"}]}, {"name": "三、填空题（每题2分）", "type": "fill", "points": 2, "questions": [{"q": "FBA发货前，需要在后台创建____（填写发货数量和发货地址）。", "ans": "货件/发货计划"}, {"q": "必须贴在单件产品包装上的FBA识别标签是____。", "ans": "FNSKU"}, {"q": "创建Listing时需要的12位商品条码是____。", "ans": "UPC"}, {"q": "每个商品在亚马逊上的唯一“身份证”编号叫____。", "ans": "ASIN"}, {"q": "2026年新规下，标题（商品名称）上限____字符。", "ans": "75"}, {"q": "商品亮点（Item Highlights）上限____字符。", "ans": "125"}, {"q": "美国站大部分类目按成交价收取的销售佣金比例约为____%。", "ans": "15"}, {"q": "美国站专业销售计划每月需缴纳$____订阅费。", "ans": "39.99"}, {"q": "广告花费 ÷ 广告销售额 × 100% = ____。", "ans": "ACOS"}, {"q": "广告花费 ÷ 总销售额 × 100% = ____。", "ans": "TACOS"}, {"q": "广告销售额 ÷ 广告花费 = ____（是ACOS的倒数）。", "ans": "ROAS"}, {"q": "在亚马逊，评价分两种：买家对商品的评价叫____，对卖家服务的评价叫____。", "ans": "Review；Feedback"}, {"q": "买家直接下单的“加入购物车”按钮通常被称为____（黄金购物车）。", "ans": "Buy Box"}, {"q": "可售天数 = 可售库存 ÷ ____。", "ans": "日均销量"}, {"q": "店铺巡查中，每周要看一次的绩效页面是____。", "ans": "账户状况"}, {"q": "订单缺陷率ODR的达标要求是低于____%。", "ans": "1"}, {"q": "有效追踪率VTR的达标要求是高于____%。", "ans": "95"}, {"q": "账户健康评级AHR建议长期保持在____分以上。", "ans": "500"}, {"q": "主图背景必须是纯白RGB(____)。", "ans": "255,255,255"}, {"q": "五点描述建议每条长度____字符。", "ans": "100-200"}, {"q": "海运到美国仓库通常需要____天。", "ans": "25-40"}, {"q": "新品期ACOS通常可接受____（填百分比区间）。", "ans": "50%-80%"}, {"q": "Prime专享折扣只有____会员才能享受。", "ans": "Prime"}, {"q": "优惠券Coupon在前台显示____色标签。", "ans": "绿"}, {"q": "店铺新手上架首选配送模式是____。", "ans": "FBA"}]}, {"name": "四、计算题（每题5分）", "type": "calc", "points": 5, "questions": [{"q": "某产品售价$25：销售佣金$3.75、FBA配送费$3.5、单件广告费$1.2、产品成本$8、头程$1、仓储$0.4、其他$0.3。求单件利润。", "ans": "单件利润 = 25 - 3.75 - 3.5 - 1.2 - 8 - 1 - 0.4 - 0.3 = $6.85"}, {"q": "某产品售价$40：销售佣金$6、FBA配送费$5、单件广告费$2、产品成本$15、头程$1.5、仓储$0.6、其他$0.4。求单件利润。", "ans": "单件利润 = 40 - 6 - 5 - 2 - 15 - 1.5 - 0.6 - 0.4 = $9.5"}, {"q": "某广告活动花费$90，带来广告销售额$300，产品毛利率35%。计算ACOS并判断是否亏钱。", "ans": "ACOS = 90 ÷ 300 = 30%；盈亏平衡ACOS ≈ 35%；30% < 35%，不亏钱（盈利）。"}, {"q": "某广告活动花费$150，带来广告销售额$300，产品毛利率40%。计算ACOS并判断是否亏钱。", "ans": "ACOS = 150 ÷ 300 = 50%；盈亏平衡ACOS ≈ 40%；50% > 40%，广告亏钱，需降价或优化。"}, {"q": "某产品售价$20，商品成本$12。求毛利率。", "ans": "毛利率 = (20 - 12) ÷ 20 = 40%；即盈亏平衡ACOS约为40%。"}]}, {"name": "五、简答题（每题6分）", "type": "short", "points": 6, "questions": [{"q": "如果让你接手这个运营助理岗位，你觉得自己每天需要负责哪些工作？请写出4项以上。", "ans": "要点：辅助产品上架、店铺巡查、报VINE、设置折扣/优惠券、变体合并拆分、物流（创建货件、装箱贴标、发货、对接货代）；进阶：广告调整、否定词、诊断、关键词库/广告架构、推广计划（任写4项）。"}, {"q": "给商品起标题（商品名称）时要遵守哪些规则？至少写4条。", "ans": "要点：①2026年新规≤75字符；②品牌名放最前；③禁用特殊字符 ! $ ? _ { } ^ ¬ ¦；④同一单词≤2次；⑤首字母大写（and/for/with等除外）；⑥不写促销词、不用emoji；⑦数字用阿拉伯数字；⑧多余卖点放商品亮点（≤125字符）。"}, {"q": "写出后台Search Terms的填写规则，至少3条。", "ans": "要点：①总长度≤250字节；②词与词用空格分隔、不用逗号；③不重复标题中已出现的关键词；④写买家会搜的同义词、缩写、常见拼写变体。"}, {"q": "报名Vine计划，助理需要注意什么？", "ans": "要点：①前提是完成品牌备案；②费用按父ASIN计：免费档2件、3-10件$75、11-30件$200；③Vine评价是合规渠道，不能要求或诱导评论员给好评。"}, {"q": "作为助理，每天/每周“看店铺”具体要看哪些内容？至少写出4项。", "ans": "要点：①账户状况（AHR、ODR等绩效指标）；②库存与补货；③订单与买家消息（24小时内回复）；④差评与退货；⑤广告数据（花费/ACOS）；⑥Listing健康（有无抑制/违规提醒）。"}, {"q": "请按顺序写出从“创建货件”到“产品可售”之间需要完成的步骤。", "ans": "要点：①后台创建货件/发货计划（填写发货数量、地址）；②准备货物（贴FNSKU、装箱、外箱贴箱唛）；③对接货代走头程（提供箱唛、发票、装箱单等报关资料）；④亚马逊签收入库上架，变为“可售”。"}, {"q": "简述新手广告3步走。", "ans": "要点：①自动广告跑词1-2周（预算$10-20/天）②出单词转手动精准投放＋花费高0单的词加否定关键词③每周优化：ACOS高的降价/暂停，ACOS低的加价扩量，逐步压到盈亏平衡以下。"}, {"q": "账号关联的常见触发场景有哪些？如何避免？", "ans": "要点：①网络/设备关联（同一电脑/WiFi/手机热点登录多店）→一店一设备一网络；②资料关联（同一套执照/信用卡/手机号注册多店）→一套资料只注册一个号；③收款关联（两店同一收款账户提现）→每店独立收款子账户；④操作/物流关联（同浏览器交叉登录、共用地址）→独立环境、地址区分。"}]}];
+const STORE_KEY = 'amz_exam_practice_v1';
+const DEFAULT_MIN = 90;
+let answers = {};
+
+function val(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({name:val('s_name'), date:val('s_date'), answers:answers})); }catch(e){}
+}
+function pad(n){ return (n<10?'0':'')+n; }
+
+(function render(){
+  const main = document.getElementById('exam');
+  let qid = 0;
+  for (const sec of Q) {
+    const s = document.createElement('section');
+    const h = document.createElement('h2'); h.textContent = sec.name; s.appendChild(h);
+    let qi = 0;
+    for (const q of sec.questions) {
+      qi++; qid++;
+      const id = 'q' + qid;
+      const d = document.createElement('div'); d.className = 'q';
+      const qt = document.createElement('div'); qt.className = 'qt'; qt.textContent = qi + '. ' + q.q; d.appendChild(qt);
+      if (sec.type === 'choice') {
+        const labels = ['A','B','C','D'];
+        q.options.forEach(function(opt, oi){
+          const l = document.createElement('label'); l.className = 'opt';
+          const inp = document.createElement('input'); inp.type = 'radio'; inp.name = id; inp.value = labels[oi];
+          inp.addEventListener('change', function(){ answers[id] = labels[oi]; save(); });
+          l.appendChild(inp); l.appendChild(document.createTextNode(' (' + labels[oi] + ') ' + opt)); d.appendChild(l);
+        });
+      } else if (sec.type === 'tf') {
+        ['对','错'].forEach(function(v){
+          const l = document.createElement('label'); l.className = 'opt';
+          const inp = document.createElement('input'); inp.type = 'radio'; inp.name = id; inp.value = v;
+          inp.addEventListener('change', function(){ answers[id] = v; save(); });
+          l.appendChild(inp); l.appendChild(document.createTextNode('  ' + v)); d.appendChild(l);
+        });
+      } else if (sec.type === 'fill') {
+        const inp = document.createElement('input'); inp.type = 'text'; inp.className = 'fill'; inp.id = id;
+        inp.addEventListener('input', function(){ answers[id] = inp.value; save(); });
+        d.appendChild(inp);
+      } else {
+        const ta = document.createElement('textarea'); ta.rows = 3; ta.id = id;
+        ta.addEventListener('input', function(){ answers[id] = ta.value; save(); });
+        d.appendChild(ta);
+      }
+      s.appendChild(d);
+    }
+    main.appendChild(s);
+  }
+})();
+
+(function restore(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY); if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.name !== undefined) document.getElementById('s_name').value = d.name;
+    if (d.date !== undefined) document.getElementById('s_date').value = d.date;
+    if (d.answers) answers = d.answers;
+    let qid = 0;
+    for (const sec of Q) {
+      for (const q of sec.questions) {
+        qid++;
+        const id = 'q' + qid, v = answers[id];
+        if (v === undefined || v === null || v === '') continue;
+        if (sec.type === 'choice' || sec.type === 'tf') {
+          document.querySelectorAll('input[name="' + id + '"]').forEach(function(e){ if (e.value === String(v)) e.checked = true; });
+        } else {
+          const el = document.getElementById(id); if (el) el.value = v;
+        }
+      }
+    }
+  }catch(e){}
+})();
+
+document.getElementById('s_name').addEventListener('input', save);
+document.getElementById('s_date').addEventListener('input', save);
+
+let remainMs = DEFAULT_MIN * 60 * 1000, timerId = null, running = false;
+function fmt(){ const s = Math.round(remainMs/1000); return pad(Math.floor(s/60)) + ':' + pad(s%60); }
+function renderTimer(){ document.getElementById('timer').textContent = fmt(); }
+function updateBtn(){ document.getElementById('btnTimer').textContent = running ? '暂停' : '开始'; }
+function tick(){
+  remainMs -= 1000;
+  if (remainMs <= 0) {
+    remainMs = 0; clearInterval(timerId); timerId = null; running = false; updateBtn();
+    document.body.classList.add('timeup');
+    alert('时间到！请点击「显示答案」对照，或点「导出答案」保存作答。');
+  }
+  if (remainMs === 5*60*1000) alert('还剩5分钟。');
+  renderTimer();
+}
+function toggleTimer(){
+  if (running) { clearInterval(timerId); timerId = null; running = false; }
+  else { if (remainMs <= 0) remainMs = DEFAULT_MIN*60*1000; running = true; timerId = setInterval(tick, 1000); }
+  updateBtn();
+}
+function resetTimer(){ clearInterval(timerId); timerId = null; running = false; remainMs = DEFAULT_MIN*60*1000; renderTimer(); updateBtn(); }
+function applyMinutes(){ const v = parseInt(document.getElementById('mins').value, 10); if (v >= 1 && v <= 180) { remainMs = v*60*1000; renderTimer(); } }
+renderTimer();
+
+let ansShown = false;
+function toggleAnswers(){
+  ansShown = !ansShown;
+  document.body.classList.toggle('showans', ansShown);
+  document.querySelectorAll('.ansline').forEach(function(e){ e.remove(); });
+  document.querySelectorAll('.opt.correct').forEach(function(e){ e.classList.remove('correct'); });
+  if (!ansShown) return;
+  let qid = 0;
+  for (const sec of Q) {
+    for (const q of sec.questions) {
+      qid++;
+      const id = 'q' + qid;
+      if (sec.type === 'choice' || sec.type === 'tf') {
+        document.querySelectorAll('input[name="' + id + '"]').forEach(function(e){
+          if (e.value === String(q.ans)) e.parentElement.classList.add('correct');
+        });
+      } else {
+        const el = document.getElementById(id);
+        const div = document.createElement('div'); div.className = 'ansline'; div.textContent = q.ans;
+        el.parentElement.appendChild(div);
+      }
+    }
+  }
+}
+
+// ---- 自动计分（客观题自动算分；计算/简答人工批） ----
+let objScore = null;
+function norm(s){ return String(s||'').toLowerCase().replace(/\s+/g,'').replace(/（/g,'(').replace(/）/g,')'); }
+function fillOk(input, ans){
+  const a = norm(ans), b = norm(input);
+  if (!b) return false;
+  if (a === b) return true;
+  if (a.indexOf('；') >= 0) return a.split('；').some(function(x){ return b.indexOf(x) >= 0 || x.indexOf(b) >= 0; });
+  return b.indexOf(a) >= 0 || a.indexOf(b) >= 0;
+}
+function calcScore(){
+  document.querySelectorAll('.opt.wrong').forEach(function(e){ e.classList.remove('wrong'); });
+  document.querySelectorAll('.ansline.wrongfill').forEach(function(e){ e.remove(); });
+  let qid = 0, gained = 0, objMax = 0, manualMax = 0, wrongList = [];
+  for (const sec of Q) {
+    for (const q of sec.questions) {
+      qid++;
+      const id = 'q' + qid, pts = sec.points;
+      if (sec.type === 'choice' || sec.type === 'tf') {
+        objMax += pts;
+        const a = answers[id];
+        if (a && String(a) === String(q.ans)) gained += pts; else wrongList.push({id:id, type:sec.type, q:q});
+      } else {
+        manualMax += pts;
+      }
+    }
+  }
+  objScore = gained + ' / ' + objMax;
+  wrongList.forEach(function(w){
+    if (w.type === 'choice' || w.type === 'tf') {
+      let picked = null;
+      document.querySelectorAll('input[name="' + w.id + '"]').forEach(function(e){
+        if (e.value === String(w.q.ans)) e.parentElement.classList.add('correct');
+        if (e.checked) { picked = e; e.parentElement.classList.add('wrong'); }
+      });
+      if (!picked) {
+        const first = document.querySelector('input[name="' + w.id + '"]');
+        const qdiv = first ? first.closest('.q') : null;
+        if (qdiv) {
+          const tag = document.createElement('div'); tag.className = 'marktag';
+          tag.textContent = '\u274C 未作答（正确答案：' + w.q.ans + '）';
+          qdiv.appendChild(tag);
+        }
+      }
+    } else {
+      const el = document.getElementById(w.id);
+      const div = document.createElement('div'); div.className = 'ansline wrongfill'; div.textContent = '参考答案：' + w.q.ans;
+      el.parentElement.appendChild(div);
+    }
+  });
+  const panel = document.getElementById('scorePanel');
+  panel.innerHTML =
+    '<div style="background:#fff7ed;border:2px solid #E47911;border-radius:8px;padding:12px 16px;margin:14px 0;font-size:14px;">' +
+    '🎯 <b>客观题得分（单选+判断）：' + gained + ' / ' + objMax + ' 分</b>（选错已标红）<br/>' +
+    '✍️ 填空题、计算题、简答题：请人工对照参考答案批改，满分 ' + manualMax + ' 分。' +
+    '</div>';
+  window.scrollTo({top: panel.offsetTop - 90, behavior: 'smooth'});
+}
+
+function collectText(){
+  const L = [];
+  L.push('【' + document.title + '】');
+  L.push('姓名：' + val('s_name'));
+  L.push('日期：' + val('s_date'));
+  const used = DEFAULT_MIN*60*1000 - remainMs;
+  L.push('作答用时：' + pad(Math.floor(used/60000)) + '分' + pad(Math.floor((used%60000)/1000)) + '秒');
+  if (objScore) L.push('自动计分（单选+判断）：' + objScore);
+  L.push('');
+  let qid = 0;
+  for (const sec of Q) {
+    L.push(sec.name);
+    let qi = 0;
+    for (const q of sec.questions) {
+      qi++; qid++;
+      const id = 'q' + qid;
+      const a = (answers[id] !== undefined && answers[id] !== null) ? String(answers[id]).trim() : '';
+      L.push(qi + '. ' + q.q);
+      if (sec.type === 'calc' || sec.type === 'short') {
+        L.push('    答案：');
+        (a ? a : '（未作答）').split('\n').forEach(function(line){ L.push('    ' + line); });
+      } else {
+        L.push('    答案：' + (a ? a : '（未作答）'));
+      }
+      L.push('');
+    }
+    L.push('');
+  }
+  return L.join('\n');
+}
+function exportAnswers(){
+  const text = '\uFEFF' + collectText();
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '亚马逊运营助理练习卷_答案_' + (val('s_name') || '未署名') + '.txt';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function clearAll(){
+  if (!confirm('确定清空所有作答并重新开始吗？')) return;
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  location.reload();
+}
+</script>
+</body>
+</html>
