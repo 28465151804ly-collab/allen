@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>亚马逊运营助理入门考试（附加题）</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif; margin: 0; background: #f4f5f7; color: #231f20; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 16px 16px 60px; }
+  header { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 2px solid #E47911;
+           display: flex; justify-content: space-between; align-items: center; gap: 12px;
+           padding: 10px 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; color: #C45500; }
+  header .meta { margin: 2px 0 0; font-size: 12px; color: #777; }
+  .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  button { font-family: inherit; font-size: 13px; padding: 7px 12px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; }
+  button:hover { border-color: #E47911; color: #C45500; }
+  button.primary { background: #E47911; color: #fff; border-color: #E47911; font-weight: 700; }
+  button.primary:hover { background: #c96a0e; color: #fff; }
+  .info { display: flex; gap: 24px; flex-wrap: wrap; background: #fff; padding: 12px 16px; margin: 14px 0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .info label { font-size: 14px; }
+  .info input { padding: 6px 8px; border: 1px solid #bbb; border-radius: 5px; width: 180px; }
+  section { background: #fff; margin: 14px 0; padding: 14px 18px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  section h2 { margin: 0 0 10px; font-size: 15px; color: #C45500; border-left: 4px solid #E47911; padding-left: 8px; }
+  section.bonus h2 { color: #8a4b00; border-left-color: #b8860b; background: #fff8e1; margin: -14px -18px 10px; padding: 10px 18px; border-radius: 8px 8px 0 0; }
+  .q { margin: 10px 0 16px; }
+  .qt { font-size: 14px; margin-bottom: 6px; }
+  .opt { display: block; font-size: 14px; padding: 2px 0 2px 6px; cursor: pointer; }
+  .opt.wrong { color: #7a1f1f; font-weight: 700; background: #fbe4e4; border: 2px solid #b02a2a; border-radius: 6px; padding: 5px 9px; margin: 3px 0; }
+  .opt.correct { color: #053d2a; font-weight: 700; background: #d6f2e1; border: 2px solid #0f6b5f; border-radius: 6px; padding: 5px 9px; margin: 3px 0; }
+  .ansline { color: #ffffff; background: #0f6b5f; font-weight: 700; font-size: 13px; margin-top: 6px; padding: 8px 12px; border-radius: 6px; border-left: 4px solid #053d2a; }
+  .ansline::before { content: '\2714 答案：'; }
+  .refnote::before { content: ''; }
+  .refnote { color: #0f6b5f; background: #eaf4f0; font-weight: 700; font-size: 12px; padding: 4px 8px; margin-top: 4px; border-left: 4px solid #0f6b5f; border-radius: 4px; }
+  input.fill, textarea { font-family: inherit; font-size: 14px; }
+  input.fill { width: 70%; max-width: 420px; padding: 6px 8px; border: 1px solid #bbb; border-radius: 5px; }
+  textarea { width: 100%; padding: 8px; border: 1px solid #bbb; border-radius: 5px; line-height: 1.5; }
+  .foot { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+  #scorePanel { margin: 14px 0; }
+  .scorecard { background: #fff; padding: 14px 18px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); line-height: 1.8; }
+  @media print { header, .toolbar { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>亚马逊运营助理入门考试（附加题）</h1>
+    <p class="meta">附加题 ｜ 只考现有试卷未出现的知识点 ｜ 均出自课程，不超纲 ｜ 选择+判断可自动计分，加分题不计入及格线</p>
+  </div>
+  <div class="toolbar">
+    <button onclick="toggleAnswers()">显示/隐藏答案</button>
+    <button onclick="calcScore()">🧮 计分（选择+判断）</button>
+    <button class="primary" onclick="exportAnswers()">📤 导出答案</button>
+    <button onclick="clearAll()">清空重答</button>
+  </div>
+</header>
+<div class="wrap">
+  <div class="info">
+    <label>姓名：<input type="text" id="s_name" placeholder="请输入姓名"></label>
+    <label>日期：<input type="text" id="s_date" value=""></label>
+    <span style="font-size:12px;color:#999;align-self:center;">先做完，再点「显示答案」对照；错题按绿色「知识点」回课程复习。</span>
+  </div>
+  <main id="exam"></main>
+  <div id="scorePanel"></div>
+  <div class="foot">本页为附加题（现有试卷未覆盖的知识点，均出自《亚马逊北美站运营助理新手入门课程》）。</div>
+</div>
+<script>
+const Q = [{"name": "一、单选题（附加 · 每题2分）", "type": "choice", "points": 2, "questions": [{"q": "按功能分类，标题/搜索词里“防水、大容量”这类描述产品特点的词属于？", "options": ["核心词", "属性词", "场景词", "品牌词"], "ans": "B", "ref": "第3章 3.5.1 关键词类型"}, {"q": "亚马逊三种主流广告类型是？", "options": ["SP（赞助商品）/ SB（赞助品牌）/ SD（赞助展示）", "CPC / CTR / CVR", "FBA / FBM / FNSKU", "VINE / Coupon / LD"], "ans": "A", "ref": "第5章 5.1 广告体系全景"}, {"q": "新手阶段，广告预算应该优先投入哪种广告？", "options": ["SD 展示广告", "SB 品牌广告", "SP 商品推广", "DSP 广告"], "ans": "C", "ref": "第5章 5.1/5.2 广告体系与SP入门"}, {"q": "手动广告中，覆盖最广、流量最大但最不精准的匹配方式是？", "options": ["精准匹配", "词组匹配", "广泛匹配", "否定匹配"], "ans": "C", "ref": "第5章 5.2.2 三种匹配方式"}, {"q": "想精准守住转化最好的核心词，应使用哪种匹配？", "options": ["广泛匹配", "词组匹配", "精准匹配", "自动广告"], "ans": "C", "ref": "第5章 5.2.2 三种匹配方式"}, {"q": "LD/BD（秒杀 / 7天促销）的特点是？", "options": ["无需提报、随时可开", "限时折扣、需提报审核", "只面向Prime会员", "只针对新品开放"], "ans": "B", "ref": "第5章 5.3.3 常用促销工具"}, {"q": "CTR（点击率）的计算公式是？", "options": ["广告花费 ÷ 广告销售额", "点击量 ÷ 曝光量", "订单数 ÷ 点击量", "广告销售额 ÷ 广告花费"], "ans": "B", "ref": "附录C 广告指标与公式"}, {"q": "以下哪个是第三方ERP工具（管理订单/库存/数据）？", "options": ["卖家精灵", "赛狐", "谷歌翻译", "美图秀秀"], "ans": "B", "ref": "附录A 常用工具清单"}]}, {"name": "二、判断题（附加 · 每题1分）", "type": "tf", "points": 1, "questions": [{"q": "长尾词搜索量小，但通常更精准、转化更好。", "ans": "对", "ref": "第3章 3.5.1 关键词类型"}, {"q": "只要不是大品牌，使用卡通形象做产品图就不算侵权。", "ans": "错", "ref": "第6章 6.2 侵权风险防范"}, {"q": "儿童玩具类产品通常需要CPC认证。", "ans": "对", "ref": "第6章 6.4 产品合规认证"}, {"q": "美国销售税是州级税，各州税率不同（约0%-10%）。", "ans": "对", "ref": "第6章 6.3 税务基础"}, {"q": "美国销售税全国统一税率。", "ans": "错", "ref": "第6章 6.3 税务基础"}, {"q": "秒杀LD/BD需要提报并审核通过后才能上线。", "ans": "对", "ref": "第5章 5.3.3 常用促销工具"}, {"q": "卖家精灵主要用于选品数据、关键词挖掘和竞品分析。", "ans": "对", "ref": "附录A 常用工具清单"}, {"q": "电子产品（如充电器）通常需要FCC认证。", "ans": "对", "ref": "第6章 6.4 产品合规认证"}]}, {"name": "三、计算题（附加 · 1题5分，人工对照批改）", "type": "calc", "points": 5, "questions": [{"q": "某产品走海运头程需35天，当前可售库存可卖45天。课程规则：可售天数 ≤ 头程时效+15天 时开始补货。请判断现在是否该补货，并写出判断过程。", "ans": "35 + 15 = 50天；当前可售45天 ≤ 50天 → 应该补货。", "ref": "第4章 4.4.2 补货时机"}]}, {"name": "加分题（第二梯队 · 答对加分，不计入及格线 · 每题2分）", "type": "choice", "points": 2, "bonus": true, "questions": [{"q": "定价的3个核心参考是？", "options": ["竞品价格 / 成本底线 / 心理价位", "广告 / 评论 / 库存", "FBA / 佣金 / 头程", "销量 / 排名 / ACOS"], "ans": "A", "ref": "第5章 5.3.1 定价的3个核心参考"}, {"q": "尾数定价：$19.99 比 $20 更能提升转化率。", "ans": "对", "ref": "第5章 5.3.1 定价的3个核心参考"}, {"q": "按第7章30天启动路线图，正确的先后顺序是？", "options": ["认知准备 → 选品调研 → Listing与备货 → 发货上线 → 运营启动", "选品 → 发货 → 认知 → 运营", "上架 → 选品 → 备货 → 推广", "发货 → Listing → 选品"], "ans": "A", "ref": "第7章 30天启动路线图"}]}];
+const REFS = ["第3章 3.5.1 关键词类型", "第5章 5.1 广告体系全景", "第5章 5.1/5.2 广告体系与SP入门", "第5章 5.2.2 三种匹配方式", "第5章 5.2.2 三种匹配方式", "第5章 5.3.3 常用促销工具", "附录C 广告指标与公式", "附录A 常用工具清单", "第3章 3.5.1 关键词类型", "第6章 6.2 侵权风险防范", "第6章 6.4 产品合规认证", "第6章 6.3 税务基础", "第6章 6.3 税务基础", "第5章 5.3.3 常用促销工具", "附录A 常用工具清单", "第6章 6.4 产品合规认证", "第4章 4.4.2 补货时机", "第5章 5.3.1 定价的3个核心参考", "第5章 5.3.1 定价的3个核心参考", "第7章 30天启动路线图"];
+const STORE_KEY = 'amz_exam_extra_v1';
+let answers = {};
+
+function $(id){ return document.getElementById(id); }
+function val(id){ const el = $(id); return el ? el.value : ''; }
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify({name:val('s_name'), date:val('s_date'), answers:answers})); }catch(e){} }
+
+(function build(){
+  const main = $('exam');
+  let qid = 0;
+  for (const sec of Q) {
+    const s = document.createElement('section');
+    if (sec.bonus) s.className = 'bonus';
+    const h = document.createElement('h2'); h.textContent = sec.name; s.appendChild(h);
+    for (const q of sec.questions) {
+      qid++;
+      const id = 'q' + qid;
+      const d = document.createElement('div'); d.className = 'q';
+      const qt = document.createElement('div'); qt.className = 'qt'; qt.textContent = qid + '. ' + q.q; d.appendChild(qt);
+      if (sec.type === 'choice' || sec.type === 'tf') {
+        const labels = sec.type === 'choice' ? 'ABCD' : ['对','错'];
+        for (let oi = 0; oi < labels.length; oi++) {
+          const l = document.createElement('label'); l.className = 'opt';
+          const inp = document.createElement('input');
+          inp.type = 'radio'; inp.name = id; inp.value = labels[oi];
+          inp.addEventListener('change', function(){ answers[id] = this.value; save(); });
+          l.appendChild(inp);
+          l.appendChild(document.createTextNode(' ' + (sec.type === 'choice' ? labels[oi] + '. ' : '') + (sec.type === 'choice' ? q.options[oi] : labels[oi])));
+          d.appendChild(l);
+        }
+      } else {
+        const ta = document.createElement('textarea'); ta.rows = 3; ta.id = id;
+        ta.addEventListener('input', function(){ answers[id] = ta.value; save(); });
+        d.appendChild(ta);
+      }
+      s.appendChild(d);
+    }
+    main.appendChild(s);
+  }
+})();
+
+(function restore(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY); if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.name !== undefined) $('s_name').value = d.name;
+    if (d.date !== undefined) $('s_date').value = d.date;
+    if (d.answers) answers = d.answers;
+    let qid = 0;
+    for (const sec of Q) for (const q of sec.questions) {
+      qid++;
+      const id = 'q' + qid, v = answers[id];
+      if (v === undefined || v === null || v === '') continue;
+      if (sec.type === 'choice' || sec.type === 'tf') {
+        document.querySelectorAll('input[name="' + id + '"]').forEach(function(e){ if (e.value === String(v)) e.checked = true; });
+      } else { const el = $(id); if (el) el.value = v; }
+    }
+  }catch(e){}
+})();
+$('s_name').addEventListener('input', save);
+$('s_date').addEventListener('input', save);
+
+let ansShown = false;
+function toggleAnswers(){
+  ansShown = !ansShown;
+  document.body.classList.toggle('showans', ansShown);
+  document.querySelectorAll('.ansline').forEach(function(e){ e.remove(); });
+  document.querySelectorAll('.opt.correct').forEach(function(e){ e.classList.remove('correct'); });
+  if (!ansShown) return;
+  let qid = 0;
+  for (const sec of Q) for (const q of sec.questions) {
+    qid++;
+    const id = 'q' + qid;
+    const ref = REFS[qid-1] || '';
+    if (sec.type === 'choice' || sec.type === 'tf') {
+      document.querySelectorAll('input[name="' + id + '"]').forEach(function(e){
+        if (e.value === String(q.ans)) e.parentElement.classList.add('correct');
+      });
+      const qdiv = document.querySelector('input[name="' + id + '"]').closest('.q');
+      if (qdiv) { const rn = document.createElement('div'); rn.className = 'ansline refnote'; rn.textContent = '知识点：' + ref; qdiv.appendChild(rn); }
+    } else {
+      const el = $(id);
+      const div = document.createElement('div'); div.className = 'ansline'; div.textContent = q.ans + (ref ? '　｜　知识点：' + ref : '');
+      el.parentElement.appendChild(div);
+    }
+  }
+}
+
+function norm(s){ return String(s||'').toLowerCase().replace(/\s+/g,'').replace(/（/g,'(').replace(/）/g,')'); }
+function calcScore(){
+  document.querySelectorAll('.opt.wrong').forEach(function(e){ e.classList.remove('wrong'); });
+  let qid = 0, gained = 0, objMax = 0, bonusGain = 0, bonusMax = 0, wrongList = [];
+  for (const sec of Q) for (const q of sec.questions) {
+    qid++;
+    const id = 'q' + qid, pts = sec.points;
+    if (sec.type === 'choice' || sec.type === 'tf') {
+      if (sec.bonus) bonusMax += pts; else objMax += pts;
+      const a = answers[id];
+      if (a && String(a) === String(q.ans)) { if (sec.bonus) bonusGain += pts; else gained += pts; }
+      else wrongList.push({id:id, type:sec.type, q:q, bonus: !!sec.bonus});
+    }
+  }
+  let rows = '<div class="scorecard">';
+  rows += '<b>客观题得分（选择+判断）：' + gained + ' / ' + objMax + ' 分</b>（选错已标红）<br/>';
+  rows += '加分题得分：' + bonusGain + ' / ' + bonusMax + ' 分（不计入及格线）<br/>';
+  rows += '✍️ 计算题请人工对照参考答案批改。</div>';
+  $('scorePanel').innerHTML = rows;
+  wrongList.forEach(function(w){
+    document.querySelectorAll('input[name="' + w.id + '"]').forEach(function(e){
+      if (e.value === String(w.q.ans)) e.parentElement.classList.add('correct');
+      if (e.checked) e.parentElement.classList.add('wrong');
+    });
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function exportAnswers(){
+  const L = [];
+  L.push('【' + document.title + '】');
+  L.push('姓名：' + (val('s_name') || '未署名') + '　　日期：' + (val('s_date') || ''));
+  let qid = 0;
+  for (const sec of Q) {
+    L.push('【' + sec.name + '】');
+    for (const q of sec.questions) {
+      qid++;
+      const id = 'q' + qid, a = answers[id];
+      L.push((qid) + '. ' + q.q);
+      L.push('    答案：' + (a ? a : '（未作答）'));
+    }
+  }
+  const blob = new Blob([L.join('\n')], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '附加题_答案_' + (val('s_name') || '未署名') + '.txt';
+  a.click();
+}
+
+function clearAll(){
+  if (!confirm('确定清空所有作答？')) return;
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  answers = {};
+  document.querySelectorAll('input[type=radio]').forEach(function(e){ e.checked = false; });
+  document.querySelectorAll('textarea').forEach(function(e){ e.value = ''; });
+  document.querySelectorAll('.ansline').forEach(function(e){ e.remove(); });
+  document.querySelectorAll('.opt.correct,.opt.wrong').forEach(function(e){ e.classList.remove('correct','wrong'); });
+  $('scorePanel').innerHTML = '';
+}
+</script>
+</body>
+</html>
