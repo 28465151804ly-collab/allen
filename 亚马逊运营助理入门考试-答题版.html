@@ -307,7 +307,7 @@ function toggleTimer(){
   updateBtn();
 }
 function resetTimer(){ clearInterval(timerId); timerId = null; running = false; remainMs = DEFAULT_MIN*60*1000; renderTimer(); updateBtn(); }
-function applyMinutes(){ const v = parseInt(document.getElementById('mins').value, 10); if (v >= 1 && v <= 180) { remainMs = v*60*1000; renderTimer(); } }
+
 renderTimer();
 document.getElementById('progTotal').textContent = TOTAL_Q;
 updateProgress();
@@ -334,7 +334,7 @@ function lockExam(auto){
   save();
 }
 
-// ---- 自动计分（客观题：单选/判断/填空自动算分；计算/简答人工批） ----
+// ---- 自动计分（客观题：单选/判断自动算分；填空/计算/简答由人工批改） ----
 let objScore = null;
 function norm(s){ return String(s||'').toLowerCase().replace(/\s+/g,'').replace(/（/g,'(').replace(/）/g,')'); }
 function fillOk(input, ans){
