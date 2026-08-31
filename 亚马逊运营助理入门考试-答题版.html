@@ -81,6 +81,21 @@
     .q.done { background: #fff; }
   }
 
+
+  #rankRail { position: fixed; right: 16px; top: 86px; width: 232px; z-index: 18;
+              background: linear-gradient(160deg,#1F4E79,#2a6aa8); color: #fff;
+              border-radius: 14px; padding: 13px 15px 11px; box-shadow: 0 6px 22px rgba(0,0,0,.18);
+              border: 1px solid rgba(255,255,255,.16); }
+  #rankRail .rr-title { font-size: 14px; font-weight: 800; letter-spacing: .5px; margin-bottom: 9px; }
+  #rankRail table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  #rankRail th { text-align: left; color: #d9e6f2; font-weight: 600; padding: 3px 2px;
+                 border-bottom: 1px solid rgba(255,255,255,.18); font-size: 10.5px; }
+  #rankRail td { padding: 6px 2px; border-bottom: 1px solid rgba(255,255,255,.10); }
+  #rankRail .nm { font-weight: 700; }
+  #rankRail .sc { font-weight: 800; color: #ffd9a0; }
+  #rankRail .tm { color: #d9e6f2; font-size: 11px; }
+  #rankRail .rr-sub { font-size: 10.5px; color: #cfe0f0; margin: 9px 0 0; line-height: 1.6; }
+  @media (max-width: 1240px) { #rankRail { display: none; } }
 </style>
 </head>
 <body>
@@ -125,26 +140,16 @@
     <main id="exam"></main>
   <div id="examBanner"></div>
   <div id="scorePanel"></div>
-  <div id="rankBoard" style="display:none;background:#fff;margin:14px 0;padding:16px 20px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid #e7ecf2;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-      <span style="font-size:20px;">🏆</span>
-      <h2 style="margin:0;font-size:15.5px;color:#1F4E79;border-left:5px solid #E47911;padding-left:10px;font-weight:800;">历史成绩榜单（历次考试）</h2>
-    </div>
-    <table style="width:100%;border-collapse:collapse;font-size:14px;">
-      <thead><tr style="background:#f4f7fa;color:#1F4E79;font-size:13px;">
-        <th style="padding:8px 6px;border-bottom:2px solid #e0e7ee;">排名</th>
-        <th style="padding:8px 6px;border-bottom:2px solid #e0e7ee;">姓名</th>
-        <th style="padding:8px 6px;border-bottom:2px solid #e0e7ee;">分数</th>
-        <th style="padding:8px 6px;border-bottom:2px solid #e0e7ee;">作答用时</th>
-      </tr></thead>
-      <tbody>
-        <tr><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">🥇 第1名</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:700;">Allen</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:800;color:#0f6b5f;">100 分</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">12 分钟</td></tr>
-        <tr><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">🥈 第2名</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:700;">董辉煌</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:800;color:#0f6b5f;">100 分</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">18 分钟</td></tr>
-        <tr><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">🥉 第3名</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:700;">马晴雯</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:800;color:#0f6b5f;">75 分</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">28 分钟</td></tr>
-      </tbody>
+  <aside id="rankRail">
+    <div class="rr-title">🏆 历史成绩榜单</div>
+    <table>
+      <tr><th>排名</th><th>姓名</th><th>分数</th><th>用时</th></tr>
+      <tr><td>🥇</td><td class="nm">Allen</td><td class="sc">100</td><td class="tm">12 分</td></tr>
+      <tr><td>🥈</td><td class="nm">董辉煌</td><td class="sc">100</td><td class="tm">18 分</td></tr>
+      <tr><td>🥉</td><td class="nm">马晴雯</td><td class="sc">75</td><td class="tm">28 分</td></tr>
     </table>
-    <div style="margin-top:10px;font-size:12px;color:#888;">排名规则：分数从高到低，同分按用时短者优先 ｜ 及格线 70 分，3 人全部通过 ✅</div>
-  </div>
+    <div class="rr-sub">及格线 70 分 · 3 人全部通过 ✅<br>考试时间 60 分钟，加油！</div>
+  </aside>
   <div class="foot">考试结束后，把导出的答案文件发给负责人即可。</div>
 </div>
 
@@ -340,7 +345,6 @@ function submitExam(){
 function lockExam(auto){
   if (submitted) return;
   submitted = true;
-  const rb = document.getElementById('rankBoard'); if (rb) rb.style.display = 'block';
   clearInterval(timerId); timerId = null; running = false; updateBtn();
   document.querySelectorAll('input, textarea').forEach(function(e){ e.disabled = true; });
   const btnScore = document.getElementById('btnScore');
