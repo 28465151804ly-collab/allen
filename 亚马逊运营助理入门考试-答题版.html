@@ -125,6 +125,26 @@
     <main id="exam"></main>
   <div id="examBanner"></div>
   <div id="scorePanel"></div>
+  <div id="rankBoard" style="display:none;background:#fff;margin:14px 0;padding:16px 20px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid #e7ecf2;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <span style="font-size:20px;">🏆</span>
+      <h2 style="margin:0;font-size:15.5px;color:#1F4E79;border-left:5px solid #E47911;padding-left:10px;font-weight:800;">历史成绩榜单（历次考试）</h2>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead><tr style="background:#f4f7fa;color:#1F4E79;font-size:13px;">
+        <th style="padding:8px 6px;border-bottom:2px solid #e0e7ee;">排名</th>
+        <th style="padding:8px 6px;border-bottom:2px solid #e0e7ee;">姓名</th>
+        <th style="padding:8px 6px;border-bottom:2px solid #e0e7ee;">分数</th>
+        <th style="padding:8px 6px;border-bottom:2px solid #e0e7ee;">作答用时</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">🥇 第1名</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:700;">Allen</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:800;color:#0f6b5f;">100 分</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">12 分钟</td></tr>
+        <tr><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">🥈 第2名</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:700;">董辉煌</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:800;color:#0f6b5f;">100 分</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">18 分钟</td></tr>
+        <tr><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">🥉 第3名</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:700;">马晴雯</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;font-weight:800;color:#0f6b5f;">75 分</td><td style="padding:10px 6px;border-bottom:1px solid #eef2f6;text-align:center;">28 分钟</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:10px;font-size:12px;color:#888;">排名规则：分数从高到低，同分按用时短者优先 ｜ 及格线 70 分，3 人全部通过 ✅</div>
+  </div>
   <div class="foot">考试结束后，把导出的答案文件发给负责人即可。</div>
 </div>
 
@@ -320,6 +340,7 @@ function submitExam(){
 function lockExam(auto){
   if (submitted) return;
   submitted = true;
+  const rb = document.getElementById('rankBoard'); if (rb) rb.style.display = 'block';
   clearInterval(timerId); timerId = null; running = false; updateBtn();
   document.querySelectorAll('input, textarea').forEach(function(e){ e.disabled = true; });
   const btnScore = document.getElementById('btnScore');
