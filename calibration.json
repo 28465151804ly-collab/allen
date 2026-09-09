@@ -1,9 +1,357 @@
 {
-  "v": 1,
-  "updated": "2026-09-09T12:00:00+08:00",
-  "items": [
-    {"name":"26-HH01801-.mp4","type":"video","typeName":"视频","contentN":0,"points":3,"note":"视频固定3分（按格式判定，不读内容）","time":1757400000000},
-    {"name":"26-HH01801--封面.jpg","type":"cover","typeName":"视频封面","contentN":0,"points":0,"note":"视频封面不算积分","time":1757400000001},
-    {"name":"26-ZSD0601-2.jpg","type":"compare","typeName":"产品对比图","contentN":1,"points":2,"note":"同场景开灯vs关灯对比","time":1757400000002}
-  ]
+ "v": 1,
+ "updated": "2026-09-09T05:59:41.937Z",
+ "items": [
+  {
+   "name": "BF00915-附图2.jpg",
+   "type": "size",
+   "typeName": "尺寸图",
+   "contentN": 0,
+   "points": 6,
+   "note": "",
+   "time": 1788933030360
+  },
+  {
+   "name": "BF00915-附图3.jpg",
+   "type": "scene",
+   "typeName": "场景图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788924206636
+  },
+  {
+   "name": "BF00915-附图1.jpg",
+   "type": "scene",
+   "typeName": "场景图",
+   "contentN": 1,
+   "points": 2,
+   "note": "",
+   "time": 1788924208090
+  },
+  {
+   "name": "BF00915-附图4.jpg",
+   "type": "scene",
+   "typeName": "场景图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788924210084
+  },
+  {
+   "name": "BF00915-附图5.jpg",
+   "type": "scene",
+   "typeName": "场景图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788924212296
+  },
+  {
+   "name": "BF00915-附图6.jpg",
+   "type": "detail",
+   "typeName": "细节图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788924218256
+  },
+  {
+   "name": "小图-401.jpg",
+   "type": "detail",
+   "typeName": "细节图",
+   "contentN": 1,
+   "points": 2,
+   "note": "",
+   "time": 1788933306772
+  },
+  {
+   "name": "小图-501.jpg",
+   "type": "detail",
+   "typeName": "细节图",
+   "contentN": 1,
+   "points": 2,
+   "note": "",
+   "time": 1788933308886
+  },
+  {
+   "name": "26-ZSD0601-6.jpg",
+   "type": "detail",
+   "typeName": "细节图",
+   "contentN": 2,
+   "points": 2,
+   "note": "",
+   "time": 1788924363045
+  },
+  {
+   "name": "26-HH01801-.mp4",
+   "type": "video",
+   "typeName": "视频",
+   "contentN": 0,
+   "points": 3,
+   "note": "视频固定3分（按格式判定，不读内容）",
+   "time": 1757400000000
+  },
+  {
+   "name": "26-HH01801--封面.jpg",
+   "type": "cover",
+   "typeName": "视频封面",
+   "contentN": 0,
+   "points": 0,
+   "note": "视频封面不算积分",
+   "time": 1757400000001
+  },
+  {
+   "name": "26-ZSD0601-2.jpg",
+   "type": "compare",
+   "typeName": "产品对比图",
+   "contentN": 1,
+   "points": 2,
+   "note": "同场景开灯vs关灯对比",
+   "time": 1757400000002
+  },
+  {
+   "name": "26-HZ08106-4.jpg",
+   "type": "scene",
+   "typeName": "场景图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788933035142
+  },
+  {
+   "name": "26-HZ08101-1-1.jpg",
+   "type": "main",
+   "typeName": "主图",
+   "contentN": 0,
+   "points": 3,
+   "note": "",
+   "time": 1788932920007
+  },
+  {
+   "name": "26-HZ08101-3.jpg",
+   "type": "detail",
+   "typeName": "细节图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788932923155
+  },
+  {
+   "name": "26-HZ08101-5.jpg",
+   "type": "scene",
+   "typeName": "场景图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788932778548
+  },
+  {
+   "name": "26-HZ08001-1-3.jpg",
+   "type": "scene",
+   "typeName": "场景图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788932782625
+  },
+  {
+   "name": "26-HZ08001-1.jpg",
+   "type": "main",
+   "typeName": "主图",
+   "contentN": 0,
+   "points": 3,
+   "note": "",
+   "time": 1788932786832
+  },
+  {
+   "name": "26-HZ08001-3.jpg",
+   "type": "detail",
+   "typeName": "细节图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788932794013
+  },
+  {
+   "name": "26-HS06002-3.jpg",
+   "type": "detail",
+   "typeName": "细节图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788932810477
+  },
+  {
+   "name": "26-HZ08106-3.jpg",
+   "type": "detail",
+   "typeName": "细节图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788932934624
+  },
+  {
+   "name": "26-ZHH0301-1-2.jpg",
+   "type": "main",
+   "typeName": "主图",
+   "contentN": 0,
+   "points": 3,
+   "note": "",
+   "time": 1788932953478
+  },
+  {
+   "name": "26-HZ08101-8.jpg",
+   "type": "scene",
+   "typeName": "场景图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788932963682
+  },
+  {
+   "name": "26-HS06501-1-1.jpg",
+   "type": "main",
+   "typeName": "主图",
+   "contentN": 0,
+   "points": 3,
+   "note": "",
+   "time": 1788932970474
+  },
+  {
+   "name": "26-HS06002-1.jpg",
+   "type": "main",
+   "typeName": "主图",
+   "contentN": 0,
+   "points": 3,
+   "note": "",
+   "time": 1788932995802
+  },
+  {
+   "name": "26-ZHH0301-6-材料图.jpg",
+   "type": "scene",
+   "typeName": "场景图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788933020044
+  },
+  {
+   "name": "26-HS06501-6-2.jpg",
+   "type": "scene",
+   "typeName": "场景图",
+   "contentN": 0,
+   "points": 2,
+   "note": "",
+   "time": 1788933038674
+  },
+  {
+   "name": "26-ZS03401-手机端.jpg",
+   "type": "apm",
+   "typeName": "手机端A+",
+   "contentN": 6,
+   "points": 6,
+   "note": "",
+   "time": 1788933137635
+  },
+  {
+   "name": "BF00915-手机端.jpg",
+   "type": "apm",
+   "typeName": "手机端A+",
+   "contentN": 5,
+   "points": 5,
+   "note": "",
+   "time": 1788933142672
+  },
+  {
+   "name": "BF01901-手机端.jpg",
+   "type": "apm",
+   "typeName": "手机端A+",
+   "contentN": 5,
+   "points": 5,
+   "note": "",
+   "time": 1788933143848
+  },
+  {
+   "name": "BF01901-A+.jpg",
+   "type": "apd",
+   "typeName": "电脑端A+",
+   "contentN": 5,
+   "points": 12.5,
+   "note": "",
+   "time": 1788933280584
+  },
+  {
+   "name": "26-HS04601-A+.jpg",
+   "type": "apd",
+   "typeName": "电脑端A+",
+   "contentN": 6,
+   "points": 15,
+   "note": "",
+   "time": 1788933167276
+  },
+  {
+   "name": "26-HS04601-手机端.jpg",
+   "type": "apm",
+   "typeName": "手机端A+",
+   "contentN": 6,
+   "points": 6,
+   "note": "",
+   "time": 1788933160107
+  },
+  {
+   "name": "26-BJ00701-A+.jpg",
+   "type": "apd",
+   "typeName": "电脑端A+",
+   "contentN": 6,
+   "points": 15,
+   "note": "",
+   "time": 1788933270036
+  },
+  {
+   "name": "26-BJ00701-手机端.jpg",
+   "type": "apm",
+   "typeName": "手机端A+",
+   "contentN": 6,
+   "points": 6,
+   "note": "",
+   "time": 1788933253082
+  },
+  {
+   "name": "25-HZH0401.2-A+.jpg",
+   "type": "apd",
+   "typeName": "电脑端A+",
+   "contentN": 6,
+   "points": 15,
+   "note": "",
+   "time": 1788933265748
+  },
+  {
+   "name": "25-HZH0401.2-手机端1.jpg",
+   "type": "apm",
+   "typeName": "手机端A+",
+   "contentN": 6,
+   "points": 6,
+   "note": "",
+   "time": 1788933295536
+  },
+  {
+   "name": "26-ZS03401-短.mp4",
+   "type": "video",
+   "typeName": "视频",
+   "contentN": 0,
+   "points": 1,
+   "note": "短的",
+   "time": 1788933505761
+  },
+  {
+   "name": "26-ZHH0301-1.jpg",
+   "type": "main",
+   "typeName": "主图",
+   "contentN": 0,
+   "points": 3,
+   "note": "",
+   "time": 1788933559811
+  }
+ ]
 }
