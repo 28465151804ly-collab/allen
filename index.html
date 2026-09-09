@@ -873,6 +873,27 @@ function findCal(rel){
 function calCount(){
   try{ return (JSON.parse(localStorage.getItem(CAL_KEY)||'[]')).length; }catch(e){ return 0; }
 }
+/* 取人工复核样本注入大模型提示词：同商品编码优先，再按最近复核补齐；A+ 任务只取 A+ 样本 */
+function calExamples(rel, task, limit){
+  try{
+    var arr=JSON.parse(localStorage.getItem(CAL_KEY)||'[]');
+    if(!arr.length) return [];
+    var sku=extractSKU(rel||'');
+    var out=[], seen={};
+    function push(c){
+      if(seen[c.name]||out.length>=limit) return;
+      seen[c.name]=1;
+      out.push({name:String(c.name||'').split('/').pop(), type:c.type, contentN:c.contentN||0, points:c.points, note:String(c.note||'').slice(0,50)});
+    }
+    arr.forEach(function(c){ if(sku && extractSKU(c.name)===sku && (task!=='ap'||c.type==='apd'||c.type==='apm')) push(c); });
+    for(var i=arr.length-1;i>=0 && out.length<limit;i--){
+      var c=arr[i];
+      if(task==='ap' && c.type!=='apd' && c.type!=='apm') continue;
+      push(c);
+    }
+    return out;
+  }catch(e){ return []; }
+}
 function clearCalLog(){
   try{ localStorage.removeItem(CAL_KEY); }catch(e){}
   var c=$('calLogState'); if(c) c.textContent='校准记录已清空（0 条）';
@@ -1134,9 +1155,12 @@ function llmJudge(file, task){
   var side = task==='ap' ? 1600 : 1024;
   return drawScaled(file, side).then(function(c){
     var b64=c.toDataURL('image/jpeg',0.82).split(',')[1];
-    var text = task==='ap'
+    var ex=calExamples(file.rel, task==='ap'?'ap':null, 12);
+    var sampleTxt=ex.length ? '\n\n【人工复核参考样本】以下判定已由资深美工逐张确认过（同商品或同类图，判定应尽量与其保持一致，仅当画面证据明显不同才偏离）：\n'+JSON.stringify(ex, null, 1) : '';
+    var fnameTxt='\n\n文件名：'+String(file.rel||file.name||'')+'（仅供参考：美工可能故意命名，应以画面实际内容为准）';
+    var text = (task==='ap'
       ? '你是亚马逊 A+ 详情页超长图的内容区块计数器。数出图中"独立大主题区块"的数量，只输出严格 JSON：{"contentN":整数,"reason":"一句中文说明分了哪些区块"}。区块定义：主视觉横幅/宣传大图每张单独算1个区块（并列多张横幅不要合并，每张都算）、卖点列表区=1、产品展示/细节图区=1、尺寸规格区=1、场景应用区（多格小图算1个区块）=1、对比区=1、文字介绍段=1；同一主题的多张小图算1个区块，不要把同一大区块拆成多个；logo/底部小字不单算。先从上到下逐块数一遍再输出。'
-      : '你是亚马逊美工图的图片类型判定员。看图后只输出一个严格 JSON，不要输出任何其他文字：\n{"type":"main|scene|mscene|detail|compare|size|review","contentN":整数,"reason":"一句中文理由"}\n\n类型定义：\n- main 主图：产品是绝对唯一主角，背景是纯色/极简陪衬（白底、灰底、单色墙、简单桌面）\n- scene 场景图：人物/建筑/家居/节日/婚礼等生活场景布置为主体，产品融入环境中；画面有醒目宣传大标题也算 scene\n- mscene 多场景图：一张图含多个独立场景拼格（各格是不同的生活/使用环境），contentN=独立场景数（白底同款小图、特写小格不算独立场景）\n- detail 细节图：产品局部特写放大（一个或多个特写格）；或主图+多个放大细节特写拼接（大图展示整体、小格放大局部并带特写文字标注，如 Striped Ribbons/Lifelike）→ 整张算 detail\n- compare 产品对比图：Why Choose Us/VS 左右或上下对比；或同一产品/场景不同状态对比（开灯 vs 关灯、before/after、有/无装饰）\n- size 尺寸图：有尺寸标注线/箭头+数字、Product Size/Dimensions 表格、或画面多处（≥3处）数字+单位规格标注，contentN=标注点数\n- review 无法判定\n\n判定硬规则（优先级从高到低，务必遵守）：\n1. 尺寸判定只看标注结构：标注线/箭头+数字、Product Size 表格、或≥3处数字+in/cm规格 → size。单个规格宣传文字（如大标题里的 28 INCH、24 PACK、PCS 数量）不算尺寸标注，按其他特征判\n2. 背景或前景有家居陈设（窗台/书架/绿植/装饰摆件/餐桌/门廊/海滩/婚礼拱门）或人物入镜 → scene，即使产品占画面中央较大比例；只有背景是纯色或极简才可能 main\n3. 画面同时有完整产品大图+多个放大局部特写格（带特写标注文字）→ detail（细节图，整张计分）\n4. 花朵/花头/枝干局部特写：画面主体是花朵花头充满画面、或特写格子展示局部细节（看不到完整花茎或容器整体）→ detail；完整产品展示（花束带花茎/花瓶整体入镜）才可能 main\n5. 场景元素丰富时即使产品居中也是 scene；只有背景纯色/极简、产品独占才算 main\n6. 白底多件装拼图（如 6pcs：白底+多张产品小格+少量场景小格）→ main（多件装展示主图）\n7. 画面明显分为左右/上下两幅且内容几乎相同（同一场景/产品，仅灯光或状态不同，如开灯 vs 关灯）→ compare（对比图）\n8. 图片上的标牌文字（PUMPKIN、WELCOME 等）属于场景布置，不算宣传大标题';
+      : '你是亚马逊美工图的图片类型判定员。看图后只输出一个严格 JSON，不要输出任何其他文字：\n{"type":"main|scene|mscene|detail|compare|size|review","contentN":整数,"reason":"一句中文理由"}\n\n类型定义：\n- main 主图：产品是绝对唯一主角，背景是纯色/极简陪衬（白底、灰底、单色墙、简单桌面）\n- scene 场景图：人物/建筑/家居/节日/婚礼等生活场景布置为主体，产品融入环境中；画面有醒目宣传大标题也算 scene\n- mscene 多场景图：一张图含多个独立场景拼格（各格是不同的生活/使用环境），contentN=独立场景数（白底同款小图、特写小格不算独立场景）\n- detail 细节图：产品局部特写放大（一个或多个特写格）；或主图+多个放大细节特写拼接（大图展示整体、小格放大局部并带特写文字标注，如 Striped Ribbons/Lifelike）→ 整张算 detail\n- compare 产品对比图：Why Choose Us/VS 左右或上下对比；或同一产品/场景不同状态对比（开灯 vs 关灯、before/after、有/无装饰）\n- size 尺寸图：有尺寸标注线/箭头+数字、Product Size/Dimensions 表格、或画面多处（≥3处）数字+单位规格标注，contentN=标注点数\n- review 无法判定\n\n判定硬规则（优先级从高到低，务必遵守）：\n1. 尺寸判定只看标注结构：标注线/箭头+数字、Product Size 表格、或≥3处数字+in/cm规格 → size。单个规格宣传文字（如大标题里的 28 INCH、24 PACK、PCS 数量）不算尺寸标注，按其他特征判\n2. 背景或前景有家居陈设（窗台/书架/绿植/装饰摆件/餐桌/门廊/海滩/婚礼拱门）或人物入镜 → scene，即使产品占画面中央较大比例；只有背景是纯色或极简才可能 main\n3. 画面同时有完整产品大图+多个放大局部特写格（带特写标注文字）→ detail（细节图，整张计分）\n4. 花朵/花头/枝干局部特写：画面主体是花朵花头充满画面、或特写格子展示局部细节（看不到完整花茎或容器整体）→ detail；完整产品展示（花束带花茎/花瓶整体入镜）才可能 main\n5. 场景元素丰富时即使产品居中也是 scene；只有背景纯色/极简、产品独占才算 main\n6. 白底多件装拼图（如 6pcs：白底+多张产品小格+少量场景小格）→ main（多件装展示主图）\n7. 画面明显分为左右/上下两幅且内容几乎相同（同一场景/产品，仅灯光或状态不同，如开灯 vs 关灯）→ compare（对比图）\n8. 图片上的标牌文字（PUMPKIN、WELCOME 等）属于场景布置，不算宣传大标题') + sampleTxt + fnameTxt;
     var body={ model:aiCfg.model, messages:[{role:'user', content:[
       {type:'text', text:text},
       {type:'image_url', image_url:{url:'data:image/jpeg;base64,'+b64}}
