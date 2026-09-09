@@ -538,9 +538,15 @@ function loadDims(file){
 function extractSKU(rel){
   if(!rel) return '';
   var parts=String(rel).split(/[\\/]/);
-  var re=/\b(\d{2}-[A-Z]{2,5}-?\d{3,5}[a-z]?)\b/;
+  /* 旧格式：26-ZSD0601（年份前缀）；新格式：BF00915 / FF00603-2 / DM01110 / AG01409 */
+  var reOld=/\b(\d{2}-[A-Z]{2,6}-?\d{2,6}[a-z]?)\b/;
+  var reNew=/\b([A-Z]{2,6}\d{2,6}(?:-\d{1,3})?)\b/;
   for(var i=0;i<parts.length;i++){
-    var m=parts[i].match(re);
+    var m=parts[i].match(reOld);
+    if(m) return m[1].replace(/[a-z]$/,'');
+  }
+  for(var i=0;i<parts.length;i++){
+    var m=parts[i].match(reNew);
     if(m) return m[1].replace(/[a-z]$/,'');
   }
   return '';
