@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>判图积分系统 v1</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+  :root{
+    --bg:#F4F3EE; --card:#FFFFFF; --line:#E4E3DD; --text:#1A1B1C; --sub:#6B7280;
+    --accent:#8BC8EA; --accent-soft:rgba(139,200,234,0.15); --ok:#52C41A; --warn:#FAAD14; --err:#EA6668;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Roboto','PingFang SC','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13.5px;line-height:1.5;}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 60px;}
+  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+  header h1{font-size:19px;font-weight:700;}
+  header .sub{font-size:12px;color:var(--sub);}
+  .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;transition:all .15s;}
+  .btn:hover{border-color:var(--accent);background:var(--accent-soft);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+  .btn.primary:hover{filter:brightness(.96);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;}
+  .card h2{font-size:14.5px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .card h2 .tag{font-size:11px;color:var(--sub);font-weight:400;}
+  #drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border:2px dashed var(--line);border-radius:12px;padding:30px 16px;cursor:pointer;text-align:center;transition:all .15s;}
+  #drop:hover,#drop.drag{border-color:var(--accent);background:var(--accent-soft);}
+  #drop .big{font-size:15px;font-weight:600;}
+  #drop .small{font-size:12px;color:var(--sub);}
+  #drop input{display:none;}
+  .progress{display:none;margin-top:12px;}
+  .progress .bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;}
+  .progress .bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:4px;transition:width .2s;}
+  .progress .txt{font-size:12px;color:var(--sub);margin-top:6px;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:0;}
+  .stat{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);}
+  .stat .n{font-size:20px;font-weight:700;line-height:1.2;}
+  .stat .l{font-size:11.5px;color:var(--sub);margin-top:2px;}
+  .stat .n small{font-size:12px;color:var(--sub);font-weight:400;}
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center;}
+  .chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:5px 12px;font-size:12px;cursor:pointer;color:var(--sub);}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .tbl-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;min-width:960px;}
+  th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:middle;font-size:12.5px;}
+  th{background:rgba(139,200,234,0.12);font-weight:600;font-size:12px;white-space:nowrap;}
+  .h-filter th{padding:3px 5px;vertical-align:top;white-space:nowrap;}
+  .h-filter .hf{font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:5px;background:#fff;min-width:0;box-sizing:border-box;}
+  .h-filter select.hf{padding:2px 2px;max-width:86px;}
+  td .rowDel{padding:3px 10px;border:1px solid #e6b8b8;border-radius:6px;background:#fff4f4;color:#c0392b;font-size:11.5px;cursor:pointer;}
+  td .rowDel:hover{background:#fde2e2;}
+  td img.thumb{width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;background:#eee;cursor:zoom-in;}
+  td .vthumb{width:54px;height:54px;border-radius:8px;border:1px solid var(--line);background:#2a2f3a;color:#9fb0c3;font-size:10px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;line-height:1.2;}
+  td .vthumb b{font-size:16px;color:#cfe0ef;}
+  .thumb-wrap{position:relative;width:54px;height:54px;}
+  .zoom-ico{position:absolute;top:2px;left:2px;width:18px;height:18px;background:rgba(20,20,20,.55);border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;pointer-events:none;}
+  .thumb-wrap:hover .zoom-ico{opacity:1;}
+  .zoom-ico svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;}
+  /* 全屏看图 */
+  #viewer{position:fixed;inset:0;background:rgba(8,8,8,.96);z-index:99;display:none;flex-direction:column;align-items:center;justify-content:center;padding:18px;}
+  #viewer.show{display:flex;}
+  #viewer .v-head{position:absolute;top:14px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:center;color:#fff;z-index:2;}
+  #viewer .v-name{font-size:13px;color:rgba(255,255,255,.85);word-break:break-all;max-width:80%;}
+  #viewer .v-actions{display:flex;gap:8px;align-items:center;}
+  #viewer .v-done{width:34px;height:34px;border-radius:50%;background:rgba(82,196,26,.85);border:none;color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;}
+  #viewer .v-done:hover{background:#52C41A;}
+  #viewer .v-close{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.14);border:none;color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;}
+  #viewer .v-close:hover{background:rgba(255,255,255,.3);}
+  #viewer .v-tools{position:absolute;top:62px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;z-index:3;background:rgba(15,17,22,.88);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 12px;box-shadow:0 4px 18px rgba(0,0,0,.45);max-width:92vw;}
+  #viewer .vt-btn{padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.92);color:#1a1d24;font-size:12.5px;font-weight:600;cursor:pointer;}
+  #viewer .vt-btn.on{background:#ffb02e;border-color:#ffb02e;color:#1a1d24;}
+  #viewer .vt-btn:hover{background:#fff;}
+  #viewer .v-tools input[type=color]{width:32px;height:30px;padding:2px;border:1px solid rgba(255,255,255,.35);border-radius:8px;background:#fff;cursor:pointer;}
+  #viewer .v-tools select{background:#fff;color:#1a1d24;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:5px 6px;font-size:12px;font-weight:600;}
+  #viewer .vt-hint{color:rgba(255,255,255,.65);font-size:11.5px;margin-left:4px;}
+  #viewer .v-stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+  #viewer canvas{max-width:100%;max-height:100%;cursor:crosshair;border-radius:6px;}
+  #viewer .v-stage video{max-width:92vw;max-height:78vh;border-radius:6px;background:#111;outline:none;}
+  #viewer .v-meta{position:absolute;bottom:14px;left:20px;right:20px;color:rgba(255,255,255,.6);font-size:12px;text-align:center;z-index:2;}
+  td .fname{font-weight:500;word-break:break-all;}
+  td .fpath{font-size:11px;color:var(--sub);word-break:break-all;}
+  .conf{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+  .conf.high{background:rgba(82,196,26,.12);color:var(--ok);}
+  .conf.mid{background:rgba(250,173,20,.14);color:#B57B00;}
+  .conf.low{background:rgba(234,102,104,.12);color:var(--err);}
+  .conf.rev{background:rgba(155,187,244,.18);color:#4C6FD8;}
+  .conf.ai{background:rgba(148,216,195,.18);color:#2E8B6D;}
+  .conf.cal{background:rgba(82,196,26,.16);color:var(--ok);}
+  .sig{font-size:11px;color:var(--sub);max-width:200px;}
+  select,input[type=number],input[type=text]{border:1px solid var(--line);border-radius:8px;padding:5px 7px;font-size:12.5px;background:#fff;color:var(--text);}
+  select:focus,input:focus{outline:none;border-color:var(--accent);}
+  .badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+  .badge.main{background:rgba(139,200,234,.18);color:#2E7FA8;}
+  .badge.scene{background:rgba(148,216,195,.2);color:#2E8F6E;}
+  .badge.mscene{background:rgba(196,167,232,.2);color:#7A4FB0;}
+  .badge.detail{background:rgba(244,179,147,.22);color:#C46A2E;}
+  .badge.compare{background:rgba(228,212,143,.25);color:#8A7410;}
+  .badge.size{background:rgba(155,187,244,.2);color:#3D5FB0;}
+  .badge.apd{background:rgba(162,221,170,.22);color:#3C8A4E;}
+  .badge.apm{background:rgba(162,221,170,.22);color:#3C8A4E;}
+  .badge.review{background:rgba(234,102,104,.14);color:var(--err);}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .empty{padding:36px 0;text-align:center;color:var(--sub);font-size:13px;}
+  .modal-mask{position:fixed;inset:0;background:rgba(20,20,20,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
+  .modal{background:var(--card);border-radius:14px;max-width:720px;width:100%;max-height:82vh;overflow:auto;padding:20px;}
+  .modal h3{font-size:15px;font-weight:700;margin-bottom:12px;}
+  .modal table{min-width:560px;}
+  .modal .close{float:right;cursor:pointer;font-size:16px;color:var(--sub);}
+  .footnote{font-size:11.5px;color:var(--sub);margin-top:8px;}
+  @media (max-width:640px){
+    .wrap{padding:14px 10px 40px;}
+    header h1{font-size:17px;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    td img.thumb{width:44px;height:44px;}
+    td .vthumb{width:44px;height:44px;}
+    .thumb-wrap{width:44px;height:44px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>判图积分系统 v1</h1>
+      <div class="sub">上传美工图 → 自动判定类型与积分 → 人工复核 → 汇总导出</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn" id="btnRules">规则速查</button>
+      <button class="btn" id="btnAISettings">AI 设置</button>
+      <button class="btn" id="btnExport" disabled>导出 CSV</button>
+      <button class="btn" id="btnExportHtml" disabled>导出带图 Excel</button>
+      <button class="btn" id="btnClear" disabled>清空结果</button>
+    </div>
+  </header>
+
+  <!-- 上传区 -->
+  <div class="card">
+    <h2>1. 上传图片 <span class="tag">支持拖入文件夹 / 多选，自动递归读取子目录</span></h2>
+    <div id="drop">
+      <div class="big">拖拽文件夹或图片到这里，或点击选择</div>
+      <div class="small">已选 <b id="fileCount">0</b> 张图片</div>
+      <input type="file" id="fileInput" multiple accept="image/*,video/*">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      <button class="btn primary" id="btnRun" disabled>开始自动判定</button>
+      <button class="btn" id="btnAdd" >追加选择图片/文件夹</button>
+      <button class="btn" id="btnDir">选择文件夹（自动拆解）</button>
+      <input type="file" id="dirInput" webkitdirectory multiple style="display:none;">
+      <span style="font-size:12px;color:var(--sub);align-self:center;" id="ocrState">OCR 引擎：未加载（判定文字信号需要联网加载一次）</span>
+      <span style="font-size:12px;color:var(--sub);align-self:center;" id="aiState"></span>
+    </div>
+    <div class="progress" id="progress">
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="txt" id="progressTxt"></div>
+    </div>
+  </div>
+
+  <!-- 统计区 -->
+  <div class="card" style="display:none;" id="statsCard">
+    <h2>2. 积分统计 <span class="tag">按复核后结果实时计算</span></h2>
+    <div class="stats" id="statsGrid"></div>
+  </div>
+
+  <!-- 复核表 -->
+  <div class="card" style="display:none;" id="tableCard">
+    <h2>3. 人工复核表 <span class="tag">AI 初判 → 人工校准类型/内容数 → 积分自动重算</span></h2>
+    <div class="filters" id="filters"></div>
+    <div class="toolbar">
+      <span style="font-size:12px;color:var(--sub);" id="tableCount"></span>
+      <span style="font-size:12px;color:var(--sub);">复核后总积分：<b id="totalFinal" style="font-size:15px;color:var(--text);"></b></span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="tbl">
+        <thead>
+          <tr class="h-name">
+            <th>图</th><th>文件名</th><th>商品编码</th><th>AI 判定</th><th>AI 积分</th><th>置信度</th><th>信号摘要</th><th>复核类型</th><th>内容/场景数</th><th>复核积分</th><th>备注</th><th></th>
+          </tr>
+          <tr class="h-filter">
+            <th></th>
+            <th><input type="text" class="hf" data-f="name" placeholder="搜文件名…" style="width:96%;box-sizing:border-box;"></th>
+            <th><input type="text" class="hf" data-f="sku" placeholder="搜编码…" style="width:96%;box-sizing:border-box;"></th>
+            <th><select class="hf" data-f="type" style="width:100%;"><option value="">全部</option></select></th>
+            <th><select class="hf" data-f="points" style="width:100%;"><option value="">全部</option></select></th>
+            <th><select class="hf" data-f="conf" style="width:100%;"><option value="">全部</option><option>高</option><option>中</option><option>低</option><option>校准</option></select></th>
+            <th></th>
+            <th><select class="hf" data-f="revType" style="width:100%;"><option value="">全部</option></select></th>
+            <th><input type="number" class="hf" data-f="contentN" placeholder="=数量" min="1" max="99" style="width:96%;box-sizing:border-box;"></th>
+            <th><select class="hf" data-f="revPts" style="width:100%;"><option value="">全部</option></select></th>
+            <th><input type="text" class="hf" data-f="note" placeholder="搜备注…" style="width:96%;box-sizing:border-box;"></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="footnote">低清图、无法判定图、A+ 内容数均为估算，请重点复核；类型与积分修改后自动计入统计。判定结果自动保存在本机浏览器，刷新不丢（缩略图需重传图片后恢复）。</div>
+  </div>
+
+</div>
+
+<!-- 规则速查弹层 -->
+<div class="modal-mask" id="ruleMask">
+  <div class="modal">
+    <span class="close" id="ruleClose">✕</span>
+    <h3>判定规则 v7</h3>
+    <table>
+      <thead><tr><th>类型</th><th>识别信号</th><th>积分</th></tr></thead>
+      <tbody>
+        <tr><td>主图</td><td>产品是画面主角；白底直判；使用场景展示（灯串雪地/门廊实景）算；多格产品拼图（6pcs）算；无醒目宣传大标题</td><td>3</td></tr>
+        <tr><td>场景图</td><td>场景氛围/人物为主体，产品融入场景；带醒目宣传大标题（如 BRING THE OCEAN）也归此类</td><td>2</td></tr>
+        <tr><td>多场景图</td><td>Suitable for Multiple DIY / Versatile Styling 标题 + 多格独立场景；积分 = 场景数 × 2（特写、白底同款不重复计）</td><td>场景数×2</td></tr>
+        <tr><td>细节图</td><td>主图+特写文字标注（Striped Ribbons/Lifelike...），或纯特写多格拼接（多色细节）</td><td>2</td></tr>
+        <tr><td>产品对比图</td><td>Why Choose Us / VS 标识 + 左右对比（自家 vs 竞品、同场景昼夜）</td><td>2</td></tr>
+        <tr><td>尺寸图</td><td>in/cm 规格标注或 Product Size 标题；标注点 1-7 → 2 / 8-12 → 4 / 13-20+ → 6</td><td>2/4/6</td></tr>
+        <tr><td>电脑端 A+</td><td>文件名含「A+」（或超长图宽≥1800）；竖长图多主题区块；内容 = 独立主题区块（logo/横幅不单算）</td><td>内容数×2.5</td></tr>
+        <tr><td>手机端 A+</td><td>文件名含「手机端」（或超长图宽&lt;1800）；同上</td><td>内容数×1</td></tr>
+        <tr><td>视频</td><td>按文件格式判定（mp4/mov/avi/mkv/webm 等），不读取视频内容；双格播放复核</td><td>3</td></tr>
+        <tr><td>视频封面</td><td>文件名含「封面/poster/thumbnail」的图片，随视频交付，不算积分</td><td>0</td></tr>
+        <tr><td>无法判定</td><td>主图+特写混合、计数不可靠等 → 转人工，AI 不给猜分</td><td>人工</td></tr>
+      </tbody>
+    </table>
+    <div class="footnote">判定顺序：①规格信号→尺寸图 ②A+文件名/长图→A+ ③Multiple DIY→多场景图 ④Why Choose Us/VS→对比图 ⑤特写结构→细节图 ⑥醒目大标题→场景图 ⑦白底→主图 ⑧背景干净+产品占主体→主图（可能是细节特写，需复核）⑨背景复杂→场景氛围图（场景展示型主图会被误判，请人工改判）⑩兜底→无法判定</div>
+    <div class="footnote" style="margin-top:6px;">文件名参考原则：A+（电脑端/手机端）因图长相仿必须靠文件名区分；文件名含「尺寸/细节/对比/场景/拼图/多场景/人物」等低分类型关键词时直接采用（美工规范命名、无人故意往低分命名，需人工确认）——其中「拼图/多场景」判多场景图（默认按 3 个场景估分，交大模型数实际场景数校准）、「人物」判场景图；「主图」为高分词不采用（防止故意命名骗分），仍按画面判定；其余情况文件名仅在画面无法判定时作兜底线索。画面判定与文件名冲突时会给出提示。</div>
+    <div class="footnote" style="margin-top:6px;">A+ 内容数已校准样本（电脑端/手机端）：HH026=7/7、HH01801=5/5、HH02401=5/6、HS06501=6/6、HH01901=5/5、ZHH0301=5/5、ZSD0601=5/5、HH03401=6/6。计数口径：主视觉、应用格区、卖点、尺寸细节、WHY CHOOSE 等文字块各算 1 个；同一屏/同一标题下的多格应用区按视觉块拆分（如 5 格场景 = 三格区 1 个 + 双场景 1 个）；logo、横幅、产品名不算。AI 初值仅作参考，请在复核表校准。</div>
+    <div class="footnote" style="margin-top:6px;">校准日志：<span id="calLogState">加载中…</span> —— 你在复核表里每次改判（类型/内容数/积分）都会自动记入日志；下次上传同名图片时直接沿用上次人工校准结果，不再重复判定（大模型"沉淀"）。<button class="btn" id="btnClearCal" style="padding:2px 10px;font-size:12px;margin-left:8px;">清空校准记录</button></div>
+    <div class="footnote" style="margin-top:6px;">共享校准（GitHub 方案A）：<span id="shareCalState">未拉取</span><button class="btn" id="btnPullCal" style="padding:2px 10px;font-size:12px;margin-left:8px;">拉取共享校准</button><button class="btn" id="btnExportCal" style="padding:2px 10px;font-size:12px;margin-left:4px;">导出校准样本</button><span style="margin-left:8px;font-size:11px;color:var(--sub);">打开页面自动拉取团队校准经验；导出 calibration.json 后手动上传到仓库即可共享给全团队</span></div>
+  </div>
+</div>
+
+<!-- AI 设置弹层 -->
+<div class="modal-mask" id="aiMask">
+  <div class="modal">
+    <span class="close" id="aiClose">✕</span>
+    <h3>大模型增强判定设置</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;">
+      <label>API 地址（OpenAI 兼容接口，末尾带 /v1）
+        <input type="text" id="aiApi" style="width:100%;box-sizing:border-box;margin-top:4px;" placeholder="https://yuli.host/v1">
+      </label>
+      <label>密钥
+        <input type="password" id="aiKey" style="width:100%;box-sizing:border-box;margin-top:4px;" placeholder="sk-...">
+      </label>
+      <label>模型（点"获取模型列表"会把该接口可选模型并入下拉；也可直接用下方内置常用模型）
+        <select id="aiModel" style="width:100%;box-sizing:border-box;margin-top:4px;"></select>
+      </label>
+      <label>判定模式
+        <select id="aiMode" style="width:100%;box-sizing:border-box;margin-top:4px;">
+          <option value="rule">仅规则引擎（离线，不用 API）</option>
+          <option value="hybrid" selected>规则引擎 + 大模型复核（推荐：仅规则引擎无法判定/低置信/多场景数场景的图交给大模型）</option>
+          <option value="llm">全部交给大模型判定（最准，调用次数多）</option>
+        </select>
+      </label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn" id="aiFetch">获取模型列表</button>
+        <button class="btn" id="aiTest">测试连接</button>
+        <button class="btn primary" id="aiSave">保存设置</button>
+        <span style="font-size:12px;color:var(--sub);" id="aiTestState"></span>
+      </div>
+      <div class="footnote">密钥仅保存在本机浏览器 localStorage，不写入 HTML 文件、不进导出表。注意：API 地址若为第三方中转，中转方可见你的密钥与请求内容，勿在公共电脑使用。大模型判定结果仍可在复核表人工校准，无法判定仍转人工。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 全屏看图/标注/播放视频遮罩：双击缩略图打开 -->
+<div id="viewer">
+  <div class="v-head">
+    <span class="v-name" id="vName"></span>
+    <div class="v-actions">
+      <button class="v-done" id="vDone" title="完成并返回（保存标记）">&#10003;</button>
+      <button class="v-close" id="vClose" title="直接返回（不保存新标记）">&#10005;</button>
+    </div>
+  </div>
+  <div class="v-tools" id="vTools">
+    <button class="vt-btn" id="vtPen" title="画笔标注">画笔</button>
+    <button class="vt-btn" id="vtText" title="点击图片添加文字标注">文字</button>
+    <button class="vt-btn" id="vtMove" title="拖动平移画面">拖动</button>
+    <input type="color" id="vtColor" value="#ff3b30" title="标记颜色">
+    <select id="vtWidth" title="画笔粗细（相对原图像素）"><option value="0.6" selected>极细</option><option value="1.2">细</option><option value="2.5">中</option><option value="5">粗</option><option value="10">特粗</option></select>
+    <select id="vtFont" title="文字大小（相对原图像素）"><option value="6">极小</option><option value="10" selected>小</option><option value="18">中</option><option value="32">大</option><option value="56">特大</option></select>
+    <button class="vt-btn" id="vtClear" title="清除本图全部标记">清除</button>
+    <span class="vt-hint">滚轮缩放 · 画笔画线 · 文字点按输入 · 打钩保存标记</span>
+  </div>
+  <div class="v-stage" id="vStage"></div>
+  <div class="v-meta" id="vMeta"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ========== 常量：积分规则 v7 ========== */
+var TYPES = {
+  main:     {name:'主图',      points:3,         conf:'high'},
+  scene:    {name:'场景图',    points:2,         conf:'high'},
+  mscene:   {name:'多场景图',  points:'scenes*2',conf:'mid'},
+  detail:   {name:'细节图',    points:2,         conf:'mid'},
+  compare:  {name:'产品对比图',points:2,         conf:'high'},
+  size:     {name:'尺寸图',    points:null,      conf:'high'}, // 分档 2/4/6
+  apd:      {name:'电脑端A+',  points:null,      conf:'mid'},  // 内容数×2.5
+  apm:      {name:'手机端A+',  points:null,      conf:'mid'},  // 内容数×1
+  video:    {name:'视频',      points:3,         conf:'high'},
+  cover:    {name:'视频封面',  points:0,         conf:'high'},
+  review:   {name:'无法判定',  points:0,         conf:'rev'}
+};
+var SIZE_BANDS = [[1,7,2],[8,12,4],[13,999,6]];
+
+/* ========== 状态 ========== */
+var files = [];            // {file, rel, url, w, h}
+var results = [];          // {rel, name, url, aiType, aiPoints, conf, sig, needReview, contentN, finalType, finalPoints, note}
+var lastList = [];         // 当前筛选后的行列表
+var filterType = 'all';
+var ocrReady = false, ocrFailed = false;
+var autoRunTimer = null;
+var pendingRun = false;
+var calUsedRun = 0;
+var LS_KEY = 'imgScoreV1';
+
+/* ========== DOM ========== */
+var $ = function(id){ return document.getElementById(id); };
+var drop=$('drop'), fileInput=$('fileInput'), btnRun=$('btnRun'), btnAdd=$('btnAdd'),
+    progress=$('progress'), barFill=$('barFill'), progressTxt=$('progressTxt'),
+    statsCard=$('statsCard'), statsGrid=$('statsGrid'), tableCard=$('tableCard'),
+    tbody=$('tbody'), filtersEl=$('filters'), tableCount=$('tableCount'),
+    totalFinal=$('totalFinal'), btnExport=$('btnExport'), btnExportHtml=$('btnExportHtml'), btnClear=$('btnClear'),
+    fileCount=$('fileCount'), ocrState=$('ocrState'), ruleMask=$('ruleMask'),
+    aiMask=$('aiMask'), aiClose=$('aiClose'), aiApi=$('aiApi'), aiKey=$('aiKey'), aiModel=$('aiModel'),
+    aiMode=$('aiMode'), aiTest=$('aiTest'), aiSave=$('aiSave'), aiTestState=$('aiTestState'),
+    aiState=$('aiState'), btnAISettings=$('btnAISettings'), aiFetch=$('aiFetch');
+
+/* ========== AI 增强设置 ========== */
+var AI_KEY='imgScoreAISettings';
+var aiCfg={api:'https://yuli.host/v1', key:'', model:'', mode:'hybrid'};
+function loadAICfg(){
+  try{ var s=JSON.parse(localStorage.getItem(AI_KEY)||'null'); if(s && typeof s==='object') aiCfg=s; }catch(e){}
+  if(!aiCfg.api) aiCfg.api='https://yuli.host/v1';
+}
+function saveAICfg(){ try{ localStorage.setItem(AI_KEY, JSON.stringify(aiCfg)); }catch(e){} }
+function updateAIState(){
+  if(aiCfg.mode==='rule'){ aiState.textContent='AI 增强：未启用（仅规则引擎）'; return; }
+  if(!aiCfg.key){ aiState.textContent='AI 增强：未配置密钥（点“AI 设置”）'; return; }
+  if(!aiCfg.model){ aiState.textContent='AI 增强：未选择模型（点“AI 设置”获取模型列表）'; return; }
+  aiState.textContent='AI 增强：'+aiCfg.model+' · '+(aiCfg.mode==='hybrid'?'仅复核拿不准的图':'全部图判定');
+}
+btnAISettings.onclick=function(){
+  aiApi.value=aiCfg.api; aiKey.value=aiCfg.key; aiModel.innerHTML=''; aiModel.value=''; aiMode.value=aiCfg.mode;
+  aiTestState.textContent='模型需点击「获取模型列表」拉取后从下拉选择';
+  aiMask.style.display='flex';
+};
+aiClose.onclick=function(){ aiMask.style.display='none'; };
+aiMask.addEventListener('click', function(e){ if(e.target===aiMask) aiMask.style.display='none'; });
+aiSave.onclick=function(){
+  aiCfg.api=(aiApi.value.trim()||'https://yuli.host/v1').replace(/\/+$/,'');
+  aiCfg.key=aiKey.value.trim();
+  if(!aiModel.value){ aiTestState.textContent='请先点「获取模型列表」拉取并选择模型'; return; }
+  aiCfg.model=aiModel.value;
+  aiCfg.mode=aiMode.value;
+  saveAICfg(); updateAIState(); aiTestState.textContent='已保存';
+};
+aiTest.onclick=function(){
+  var api=(aiApi.value.trim()||'https://yuli.host/v1').replace(/\/+$/,'');
+  var key=aiKey.value.trim(); var model=aiModel.value;
+  if(!key){ aiTestState.textContent='请先填写密钥'; return; }
+  if(!model){ aiTestState.textContent='请先获取并选择模型'; return; }
+  aiTestState.textContent='测试中…';
+  fetch(api+'/chat/completions', {method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:model, messages:[{role:'user',content:'ping，请只回复 ok'}], max_tokens:10})})
+    .then(function(res){ return res.json().then(function(j){ return {ok:res.ok, j:j}; }); })
+    .then(function(x){
+      if(x.ok && x.j.choices && x.j.choices[0]){ aiTestState.textContent='连接成功：'+(x.j.choices[0].message.content||''); }
+      else{ aiTestState.textContent='失败：'+(x.j.error&&x.j.error.message?x.j.error.message:JSON.stringify(x.j).slice(0,120)); }
+    })
+    .catch(function(e){ aiTestState.textContent='网络错误：'+e.message; });
+};
+/* 模型下拉：只显示接口真实拉取的模型（降序排列）；未拉取时为空并提示 */
+function fillModelSelect(extra){
+  aiModel.innerHTML='';
+  var cur=aiCfg.model||'';
+  var list=(extra||[]).filter(Boolean).sort(function(a,b){ return a<b?1:-1; });
+  list.forEach(function(id){
+    var o=document.createElement('option'); o.value=id; o.textContent=id; aiModel.appendChild(o);
+  });
+  if(list.indexOf(cur)>=0) aiModel.value=cur;
+}
+/* 获取模型列表：拉取 API 可用模型，下拉只显示拉取结果 */
+aiFetch.onclick=function(){
+  var api=(aiApi.value.trim()||'https://yuli.host/v1').replace(/\/+$/,'');
+  var key=aiKey.value.trim();
+  if(!key){ aiTestState.textContent='请先填写密钥'; return; }
+  aiTestState.textContent='拉取中…（最多等 15 秒）';
+  var ac=new AbortController(); setTimeout(function(){ ac.abort(); }, 15000);
+  fetch(api+'/models', {headers:{'Authorization':'Bearer '+key}, signal:ac.signal})
+    .then(function(res){
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      return res.json();
+    })
+    .then(function(j){
+      var list=Array.isArray(j)? j.map(function(m){ return m.id||m; }).filter(Boolean)
+        : (j.data||j.models||[]).map(function(m){ return m.id||m; }).filter(Boolean);
+      fillModelSelect(list);
+      aiTestState.textContent=list.length ? ('已获取 '+list.length+' 个模型，从下拉框选择；当前已选：'+(aiModel.value||'未选')) : '接口未返回模型，请检查地址/密钥';
+    })
+    .catch(function(e){ fillModelSelect([]); aiTestState.textContent='拉取失败：'+e.message; });
+};
+
+/* ========== 文件选择 ========== */
+function pickFiles(){
+  fileInput.value='';
+  fileInput.click();
+}
+drop.addEventListener('click', pickFiles);
+btnAdd.addEventListener('click', pickFiles);
+fileInput.addEventListener('change', function(){
+  addFiles(fileInput.files);
+});
+var btnDir=$('btnDir'), dirInput=$('dirInput');
+btnDir.addEventListener('click', function(){ dirInput.value=''; dirInput.click(); });
+dirInput.addEventListener('change', function(){
+  addFiles(dirInput.files);
+});
+['dragover','drop'].forEach(function(ev){
+  drop.addEventListener(ev, function(e){
+    e.preventDefault();
+    if(ev==='dragover'){ drop.classList.add('drag'); return; }
+    drop.classList.remove('drag');
+    var dt=e.dataTransfer;
+    if(!dt) return;
+    var handled=false;
+    /* 优先：文件夹递归（webkitGetAsEntry），兼容单文件 */
+    if(dt.items && dt.items.length){
+      var items=dt.items, todo=[];
+      for(var i=0;i<items.length;i++){
+        var it=items[i];
+        var en = (typeof it.webkitGetAsEntry==='function') ? it.webkitGetAsEntry() : null;
+        if(en){ todo.push(scanEntry(en,'')); }
+        else if(it.kind==='file' && typeof it.getAsFile==='function'){ todo.push(Promise.resolve([it.getAsFile()])); }
+      }
+      if(todo.length){
+        handled=true;
+        Promise.all(todo).then(function(lists){
+          var all=[].concat.apply([],lists);
+          addFiles(all);
+        });
+      }
+    }
+    /* 兜底：直接读 files（所有浏览器可靠路径） */
+    if(!handled && dt.files && dt.files.length){
+      addFiles(dt.files);
+    }
+  });
+  drop.addEventListener('dragleave', function(){ drop.classList.remove('drag'); });
+});
+var IMG_RE=/\.(jpe?g|png|webp|gif|bmp)$/i;
+var VID_RE=/\.(mp4|mov|avi|mkv|webm|m4v|wmv|flv|ts|mpg|mpeg|3gp)$/i;
+var COVER_RE=/(封面|poster|thumbnail)/i;
+function scanEntry(entry, path){
+  return new Promise(function(resolve){
+    if(!entry){ return resolve([]); }
+    if(entry.isFile){
+      entry.file(function(f){
+        if(IMG_RE.test(f.name) || VID_RE.test(f.name)){
+          f._rel = path ? path+'/'+f.name : f.name;
+          resolve([f]);
+        } else { resolve([]); }
+      }, function(){ resolve([]); });
+    } else if(entry.isDirectory){
+      var reader=entry.createReader(), subs=[];
+      (function readBatch(){
+        reader.readEntries(function(entries){
+          if(!entries.length){ resolve(Promise.all(subs)); return; }
+          entries.forEach(function(en){ subs.push(scanEntry(en, path?path+'/'+entry.name:entry.name)); });
+          readBatch();
+        }, function(){ resolve(Promise.all(subs)); });
+      })();
+    } else { resolve([]); }
+  });
+}
+function addFiles(list){
+  var added=0;
+  Array.prototype.forEach.call(list, function(f){
+    if(!f) return;
+    var isVid=VID_RE.test(f.name);
+    var isImg=IMG_RE.test(f.name);
+    if(!isVid && !isImg) return;
+    var rel = f._rel || f.webkitRelativePath || f.name;
+    if(files.some(function(x){ return x.rel===rel; })) return;
+    files.push({file:f, rel:rel, url:URL.createObjectURL(f), isVideo:isVid, isCover:(isImg&&!isVid)&&COVER_RE.test(f.name)});
+    added++;
+  });
+  fileCount.textContent = files.length;
+  btnRun.disabled = files.length===0;
+  if(added){ ensureOcr(); }
+  /* 上传后自动判定（防抖 3s：等批量上传动作停止再统一判定；判定进行中时标记待补跑，完成后自动补跑新上传的图） */
+  if(autoRunTimer) clearTimeout(autoRunTimer);
+  autoRunTimer=setTimeout(function(){
+    if(!files.length) return;
+    if(btnRun.disabled){ pendingRun=true; return; }
+    btnRun.click();
+  }, 3000);
+}
+loadAICfg(); updateAIState();
+var ocrWorker=null;
+function ensureOcr(){
+  if(ocrReady || ocrFailed) return;
+  if(typeof Tesseract==='undefined' || typeof Tesseract.createWorker!=='function'){
+    ocrFailed=true; ocrState.textContent='OCR 引擎：加载失败，文字信号不可用（判定将降级）'; return;
+  }
+  ocrState.textContent='OCR 引擎：加载中…';
+  try{
+    Tesseract.createWorker('eng').then(function(w){
+      ocrWorker=w; ocrReady=true; ocrState.textContent='OCR 引擎：就绪（eng）';
+    }).catch(function(){
+      ocrReady=false; ocrFailed=true; ocrState.textContent='OCR 引擎：初始化失败，文字信号不可用';
+    });
+  }catch(e){
+    ocrReady=false; ocrFailed=true; ocrState.textContent='OCR 引擎：初始化失败，文字信号不可用';
+  }
+}
+
+/* ========== 图像分析 ========== */
+function loadDims(file){
+  return new Promise(function(resolve,reject){
+    var url=URL.createObjectURL(file);
+    var img=new Image();
+    img.onload=function(){ resolve({w:img.naturalWidth,h:img.naturalHeight}); URL.revokeObjectURL(url); };
+    img.onerror=function(){ URL.revokeObjectURL(url); reject(new Error('decode fail')); };
+    img.src=url;
+  });
+}
+/* 从相对路径（文件夹名+文件名）中提取商品编码：26-ZHH-02201 / 26-ZHH0501 等，取最外层第一个命中 */
+function extractSKU(rel){
+  if(!rel) return '';
+  var parts=String(rel).split(/[\\/]/);
+  var re=/\b(\d{2}-[A-Z]{2,5}-?\d{3,5}[a-z]?)\b/;
+  for(var i=0;i<parts.length;i++){
+    var m=parts[i].match(re);
+    if(m) return m[1].replace(/[a-z]$/,'');
+  }
+  return '';
+}
+function drawScaled(file, maxSide){
+  return new Promise(function(resolve,reject){
+    var url=URL.createObjectURL(file);
+    var img=new Image();
+    img.onload=function(){
+      var s=Math.min(1, maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+      var w=Math.max(1,Math.round(img.naturalWidth*s)), h=Math.max(1,Math.round(img.naturalHeight*s));
+      var c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      resolve(c);
+    };
+    img.onerror=function(){ URL.revokeObjectURL(url); reject(new Error('decode fail')); };
+    img.src=url;
+  });
+}
+function analyzeBorder(canvas){
+  var ctx=canvas.getContext('2d');
+  var w=canvas.width,h=canvas.height;
+  var d=ctx.getImageData(0,0,w,h).data;
+  var bw=Math.max(2,Math.round(w*0.05)), bh=Math.max(2,Math.round(h*0.05));
+  /* 四角平均色 = 背景色 */
+  var corners=[[0,0],[w-1,0],[0,h-1],[w-1,h-1]];
+  var br=0,bg=0,bb=0;
+  corners.forEach(function(p){ var i=(p[1]*w+p[0])*4; br+=d[i]; bg+=d[i+1]; bb+=d[i+2]; });
+  br/=4; bg/=4; bb/=4;
+  var near=0, diff60=0, total=0;
+  var bucketSet={};
+  for(var y=0;y<h;y++){
+    for(var x=0;x<w;x++){
+      var inBorder = x<bw || x>=w-bw || y<bh || y>=h-bh;
+      if(!inBorder) continue;
+      var i=(y*w+x)*4;
+      var r=d[i],g=d[i+1],b=d[i+2];
+      if(r>225 && g>225 && b>225) near++;
+      if(Math.max(Math.abs(r-br),Math.abs(g-bg),Math.abs(b-bb))>=60) diff60++;
+      bucketSet[((r>>5)<<10)|((g>>5)<<5)|(b>>5)] = 1;
+      total++;
+    }
+  }
+  var buckets=0; for(var k in bucketSet) buckets++;
+  return { whiteRatio: total? near/total : 0, diff60: total? diff60/total : 0, buckets: buckets };
+}
+function productBBoxRatio(canvas){
+  var ctx=canvas.getContext('2d');
+  var w=canvas.width,h=canvas.height;
+  var d=ctx.getImageData(0,0,w,h).data;
+  var corners=[[0,0],[w-1,0],[0,h-1],[w-1,h-1]];
+  var br=0,bg=0,bb=0;
+  corners.forEach(function(p){ var i=(p[1]*w+p[0])*4; br+=d[i]; bg+=d[i+1]; bb+=d[i+2]; });
+  br/=4; bg/=4; bb/=4;
+  var minX=w,minY=h,maxX=0,maxY=0;
+  var step=2;
+  for(var y=0;y<h;y+=step){
+    for(var x=0;x<w;x+=step){
+      var i=(y*w+x)*4;
+      var dist=Math.max(Math.abs(d[i]-br),Math.abs(d[i+1]-bg),Math.abs(d[i+2]-bb));
+      if(dist>=90){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; }
+    }
+  }
+  if(maxX<minX || maxY<minY) return 1;
+  var area=(maxX-minX+1)*(maxY-minY+1)/(w*h);
+  return Math.min(1,area);
+}
+
+/* ========== OCR 信号 ========== */
+function runOcr(file){
+  return new Promise(function(resolve){
+    if(!ocrReady || !ocrWorker){ resolve({text:'',words:[]}); return; }
+    drawScaled(file,1200).then(function(c){
+      try{
+        ocrWorker.recognize(c)
+          .then(function(r){
+            var words=[];
+            var rd = r && r.data ? r.data : (r || {});
+            (rd.words||[]).forEach(function(ww){
+              if(!ww.text || !ww.text.trim()) return;
+              var bx=ww.bbox||{};
+              words.push({text:ww.text.trim(), x:bx.x0||0, y:bx.y0||0, w:(bx.x1||0)-(bx.x0||0), h:(bx.y1||0)-(bx.y0||0), conf:ww.confidence});
+            });
+            resolve({text:rd.text||'', words:words});
+          }).catch(function(){ resolve({text:'',words:[]}); });
+      }catch(e){ resolve({text:'',words:[]}); }
+    }).catch(function(){ resolve({text:'',words:[]}); });
+  });
+}
+function clusterLines(words, H){
+  var lines=[]; words.sort(function(a,b){ return a.y-b.y; });
+  words.forEach(function(wd){
+    var placed=false;
+    for(var i=lines.length-1;i>=0;i--){
+      var l=lines[i];
+      if(Math.abs(wd.y-l.y)<H*0.035){ l.words.push(wd); l.y=Math.min(l.y,wd.y); l.h=Math.max(l.h,wd.h); placed=true; break; }
+    }
+    if(!placed){ lines.push({y:wd.y,h:wd.h,words:[wd]}); }
+  });
+  return lines;
+}
+function lineText(l){ return l.words.map(function(w){return w.text;}).join(' '); }
+function signalsFromOcr(ocr, W, H){
+  var sig={sizeN:0, hasSizeTitle:false, multiScene:false, compare:false, feature:false, headline:false, headers:0, hasText:false};
+  if(!ocr || !ocr.words.length) return sig;
+  sig.hasText=true;
+  var all=ocr.text||'';
+  var m=all.match(/(\d+(?:\.\d+)?)\s*(?:cm|in|inch|inches|ft|feet)(?:\s*\/\s*\d+(?:\.\d+)?\s*(?:cm|in|inch|inches|ft|feet))?/gi);
+  sig.sizeN = m? m.length : 0;
+  sig.hasSizeTitle = /product\s*size|product\s*dimensions/i.test(all);
+  sig.multiScene = /suitable\s+for\s+multiple|versatile\s+styling|multiple\s+diy|variety\s+of\s+scenarios|multiple\s+scenarios|for\s+all\s+scenarios|scenarios\s*$/i.test(all);
+  sig.compareStrong = /why\s+choose\s+us/i.test(all);
+  sig.compareWeak = /\bvs\b/i.test(all);
+  sig.compare = sig.compareStrong || sig.compareWeak;
+  sig.feature = /lifelike|realistic|no\s+watering|fade\s+or\s+deform|striped|maintenance/i.test(all);
+  var lines=clusterLines(ocr.words, H);
+  var caps=0;
+  lines.forEach(function(l){
+    var t=lineText(l);
+    var upper=t.replace(/[^A-Za-z]/g,'');
+    var span=(l.words[l.words.length-1].x + l.words[l.words.length-1].w) - l.words[0].x;
+    if(span>W*0.28 && upper.length>8 && t===t.toUpperCase() && /[A-Z]/.test(t)){ caps++; }
+    if(span>W*0.28 && upper.length>14){ sig.headline=true; }
+  });
+  sig.headers=caps;
+  return sig;
+}
+
+/* ========== 判定引擎 v7 ========== */
+function classify(f, meta, sig){
+  var r={type:'review', points:0, conf:'rev', needReview:true, sigText:'', contentN:0};
+  var parts=[];
+  var lowRes = Math.min(meta.w,meta.h)<300;
+  if(lowRes) parts.push('低清');
+  var ratio=meta.w/meta.h;
+  var longImg = ratio>=3 || ratio<=1/3;
+  var fn=(f.rel||f.name||'').toLowerCase();
+  var wNum = (fn.match(/a\+(\d{3,4})/)||[])[1] ? parseInt(fn.match(/a\+(\d{3,4})/)[1]) : 0;
+  var isDesktopA = /a\+/.test(fn) && !/手机端|mobile/.test(fn) && meta.w>1000 && !(wNum>0 && wNum<=1000);
+  var isMobileA = /手机端|mobile/.test(fn) || (/a\+/.test(fn) && (meta.w<=1000 || (wNum>0 && wNum<=1000)));
+  var isAplus = isDesktopA || isMobileA || (longImg && meta.h>1600);
+  /* ① A+（文件名优先） */
+  if(isDesktopA || isMobileA || (isAplus && longImg)){
+    var isM = isMobileA || (isAplus && !isDesktopA && meta.w<=1000);
+    r.type = isM? 'apm':'apd';
+    if(aiCfg.mode!=='rule' && aiCfg.key && aiCfg.model){
+      /* AI 模式：A+ 类型由文件名锁定，内容数由大模型对长图数主题区块（跳过 OCR） */
+      r.contentN=0; r.points=0;
+      r.conf='low'; r.needReview=true;
+      parts.push('长图'+(isM?'·手机端':'·电脑端'), '内容数交大模型数主题区块');
+      r.sigText=parts.join(' | ');
+      return r;
+    }
+    r.contentN = Math.max(1, Math.round(sig.headers*0.75) || 1);
+    if(sig.hasText && sig.headers===0){ r.contentN = 1; }
+    r.points = r.type==='apm'? r.contentN*1 : r.contentN*2.5;
+    r.conf='mid'; r.needReview=true;
+    parts.push('长图'+(isM?'·手机端':'·电脑端'), '内容数估算:'+r.contentN, '请人工校准');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  /* ② 尺寸图（规格信号优先）——但规格文字若在大标题里（如 28 INCH/24 PACK 宣传标题），交大模型复核是主图规格宣传还是尺寸图 */
+  if(sig.sizeN>0 || sig.hasSizeTitle){
+    if(sig.headline && sig.sizeN<=2 && meta.whiteRatio>=0.3){
+      r.type='size'; r.points=2; r.conf='low'; r.needReview=true;
+      parts.push('规格文字×'+sig.sizeN+'在大标题中','交大模型复核是规格宣传还是尺寸标注');
+      r.sigText=parts.join(' | ');
+      return r;
+    }
+    var n=sig.sizeN;
+    r.type='size';
+    var p=2;
+    for(var i=0;i<SIZE_BANDS.length;i++){ if(n>=SIZE_BANDS[i][0] && n<=SIZE_BANDS[i][1]){ p=SIZE_BANDS[i][2]; break; } }
+    r.points=p; r.conf='high'; r.needReview=false;
+    parts.push('尺寸标注×'+n+' → '+p+'分');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  /* ②b 文件名低分关键词强信号（美工规范命名，无人故意往低分命名；"主图"为高分词不采用，防骗分） */
+  var fName=(f.rel||f.name||'').toLowerCase();
+  var kw = /尺寸|size|dimension/.test(fName) ? {t:'size',l:'尺寸图'}
+    : /拼图|多场景|拼格|multiple|diy/.test(fName) ? {t:'mscene',l:'多场景图'}
+    : /细节|detail/.test(fName) ? {t:'detail',l:'细节图'}
+    : /对比|compare|\bvs\b/.test(fName) ? {t:'compare',l:'产品对比图'}
+    : /人物|people|person/.test(fName) ? {t:'scene',l:'场景图'}
+    : /场景|scene/.test(fName) ? {t:'scene',l:'场景图'} : null;
+  if(kw){
+    r.type=kw.t;
+    r.contentN = (kw.t==='mscene')? 3 : 0; /* 多场景图场景数先按 3 格估算，AI 模式由大模型校准 */
+    r.points=(kw.t==='size')? 2 : pointsFromType(kw.t, r.contentN);
+    r.conf='mid'; r.needReview=true;
+    parts.push('文件名含"'+kw.l+'"','请人工确认');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  /* ③ 多场景图 */
+  if(sig.multiScene){
+    r.type='mscene';
+    r.contentN = 4; // 估算：典型四宫格
+    r.points = r.contentN*2;
+    r.conf='mid'; r.needReview=true;
+    parts.push('Multiple DIY 标题', '场景数估算:'+r.contentN, '请人工确认场景数');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  /* ④ 产品对比图（Why Choose Us 长词高置信；单独 vs 短词可能是 OCR 误报，交大模型复核） */
+  if(sig.compare){
+    r.type='compare'; r.points=2; r.conf= sig.compareStrong? 'high':'low'; r.needReview= !sig.compareStrong;
+    parts.push(sig.compareStrong? 'Why Choose Us':'疑似 VS 对比(OCR)');
+    if(!sig.compareStrong) parts.push('交大模型复核');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  /* ⑤ 细节图（特写卖点词 + 非白底） */
+  if(sig.feature && meta.whiteRatio<0.5){
+    r.type='detail'; r.points=2; r.conf='mid'; r.needReview=true;
+    parts.push('特写卖点词', '请确认是否为细节图');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  /* ⑥ 醒目宣传大标题 → 场景图（用户规则：文字太明显）；交大模型复核（区分宣传海报式场景 vs 白底拼图主图） */
+  if(sig.headline){
+    /* ⑥b 白底 + 文件名含多件装 PCS（如 6pcs 白底多格拼图）→ 主图，不交大模型 */
+    if(meta.whiteRatio>=0.5 && /\d+\s*(?:pcs|pack)\b/i.test((f.rel||f.name||''))){
+      r.type='main'; r.points=3; r.conf='high'; r.needReview=false;
+      parts.push('白底'+Math.round(meta.whiteRatio*100)+'%','多件装(PCS)拼图主图');
+      r.sigText=parts.join(' | ');
+      return r;
+    }
+    /* ⑥c 白底 + 特写卖点词（如 Lifelike+白底）→ 交大模型复核是白底主图还是主图+细节特写拼接 */
+    if(sig.feature && meta.whiteRatio>=0.5){
+      r.type='main'; r.points=3; r.conf='low'; r.needReview=true;
+      parts.push('白底'+Math.round(meta.whiteRatio*100)+'%','特写卖点词','交大模型复核主图/细节拼接');
+      r.sigText=parts.join(' | ');
+      return r;
+    }
+    r.type='scene'; r.points=2; r.conf='low'; r.needReview=true;
+    parts.push('醒目宣传标题','交大模型复核是场景海报还是产品主图');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  /* ⑦ 白底 → 主图 */
+  if(meta.whiteRatio>=0.5){
+    /* ⑦b 白底 + 特写卖点词（Lifelike 等，画面可能为主图+放大细节特写拼接）→ 交大模型复核 */
+    if(sig.feature){
+      r.type='main'; r.points=3; r.conf='low'; r.needReview=true;
+      parts.push('白底'+Math.round(meta.whiteRatio*100)+'%','特写卖点词','交大模型复核主图/细节拼接');
+      r.sigText=parts.join(' | ');
+      return r;
+    }
+    r.type='main'; r.points=3; r.conf='high'; r.needReview=false;
+    parts.push('白底'+Math.round(meta.whiteRatio*100)+'%');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  /* ⑧ 非白底 + 背景干净（边框颜色种类少）+ 产品占主体 → 主图/细节特写，交大模型复核 */
+  if(meta.bboxRatio>=0.7 && meta.buckets<50){
+    r.type='main'; r.points=3; r.conf='low'; r.needReview=true;
+    parts.push('产品占主体'+Math.round(meta.bboxRatio*100)+'%','背景干净('+meta.buckets+'色)','交大模型复核');
+    /* 文件名冲突提示（如文件名叫"尺寸"却判了主图） */
+    var fnC=(f.rel||f.name||'').toLowerCase();
+    if(/尺寸|size|dimension/.test(fnC)) parts.push('文件名含"尺寸"，若画面有规格标注请改判尺寸图');
+    else if(/细节|detail/.test(fnC)) parts.push('文件名含"细节"，请确认是否细节图');
+    else if(/场景|scene/.test(fnC)) parts.push('文件名含"场景"，若为场景展示请改判场景图');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  /* ⑨ 非白底 + 背景复杂（环境元素多）→ 场景氛围主体，交大模型复核（场景图/多场景图/场景展示型主图） */
+  if(meta.bboxRatio>=0.7 && meta.buckets>=50){
+    r.type='scene'; r.points=2; r.conf='low'; r.needReview=true;
+    parts.push('背景复杂('+meta.buckets+'色)','场景氛围主体','交大模型复核是场景/多场景/主图');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  /* ⑩ 兜底：先看画面有没有其他线索，都没有才参考文件名（可能被故意命名，标低置信） */
+  var fN=(f.rel||f.name||'').toLowerCase();
+  var fnHint=null;
+  if(/尺寸|size|dimension/.test(fN)) fnHint={type:'size',label:'尺寸图'};
+  else if(/场景|scene/.test(fN)) fnHint={type:'scene',label:'场景图'};
+  else if(/对比|compare|\bvs\b/.test(fN)) fnHint={type:'compare',label:'产品对比图'};
+  else if(/细节|detail/.test(fN)) fnHint={type:'detail',label:'细节图'};
+  else if(/主图|main/.test(fN)) fnHint={type:'main',label:'主图'};
+  if(fnHint){
+    r.type=fnHint.type;
+    r.points=(fnHint.type==='size')? 2 : TYPES[fnHint.type].points;
+    r.conf='low'; r.needReview=true;
+    parts.push('画面无法自动判定','文件名含"'+fnHint.label+'"推断','低置信请人工复核');
+    r.sigText=parts.join(' | ');
+    return r;
+  }
+  r.type='review'; r.points=0; r.conf='rev'; r.needReview=true;
+  parts.push('无法自动判定，转人工');
+  r.sigText=parts.join(' | ');
+  return r;
+}
+
+/* ========== 批量判定 ========== */
+btnRun.addEventListener('click', function(){ runAll(); });
+/* ========== 校准日志（大模型"沉淀"：人工复核结果自动记忆，同名图下次直接沿用） ========== */
+var CAL_KEY='imgScoreCalLog';
+function saveCalLog(r){
+  try{
+    if(!r || !r.name) return;
+    var arr=JSON.parse(localStorage.getItem(CAL_KEY)||'[]');
+    var rec={name:r.name, type:r.finalType, typeName:TYPES[r.finalType].name,
+             contentN:r.contentN||0, points:r.finalPoints, note:r.note||'', time:Date.now()};
+    if(r.marks && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))) rec.marks=r.marks;
+    var i=-1;
+    for(var k=0;k<arr.length;k++){ if(arr[k].name===r.name){ i=k; break; } }
+    if(i>=0) arr[i]=rec; else arr.push(rec);
+    if(arr.length>800) arr=arr.slice(-800);
+    localStorage.setItem(CAL_KEY, JSON.stringify(arr));
+  }catch(e){}
+}
+function findCal(rel){
+  var name=(rel||'').split('/').pop();
+  try{
+    var arr=JSON.parse(localStorage.getItem(CAL_KEY)||'[]');
+    for(var i=arr.length-1;i>=0;i--){ if(arr[i].name===name) return arr[i]; }
+  }catch(e){}
+  return null;
+}
+function calCount(){
+  try{ return (JSON.parse(localStorage.getItem(CAL_KEY)||'[]')).length; }catch(e){ return 0; }
+}
+function clearCalLog(){
+  try{ localStorage.removeItem(CAL_KEY); }catch(e){}
+  var c=$('calLogState'); if(c) c.textContent='校准记录已清空（0 条）';
+}
+/* ========== 共享校准（GitHub 方案A：打开页面自动拉取团队校准经验；导出后手动上传仓库） ========== */
+var SHARE_CAL_URL='https://cdn.jsdelivr.net/gh/28465151804ly-collab/allen@main/calibration.json';
+var SHARE_KEY='imgScoreShareCfg';
+function getShareCfg(){ try{ return JSON.parse(localStorage.getItem(SHARE_KEY)||'{}'); }catch(e){ return {}; } }
+function setShareCfg(o){ try{ localStorage.setItem(SHARE_KEY, JSON.stringify(o)); }catch(e){} }
+function calArr(){ try{ return JSON.parse(localStorage.getItem(CAL_KEY)||'[]'); }catch(e){ return []; } }
+function calSet(arr){ try{ localStorage.setItem(CAL_KEY, JSON.stringify(arr)); }catch(e){} }
+function updateCalNote(){ var c=$('calLogState'); if(c) c.textContent=calCount()+' 条'; }
+function pullSharedCal(){
+  var cfg=getShareCfg();
+  var url=cfg.url||SHARE_CAL_URL;
+  var st=$('shareCalState'); if(st) st.textContent='拉取中…';
+  var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
+  var t=setTimeout(function(){ if(ctrl) ctrl.abort(); },15000);
+  fetch(url, ctrl?{signal:ctrl.signal}:undefined).then(function(res){
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    return res.json();
+  }).then(function(data){
+    clearTimeout(t);
+    if(!data || !Array.isArray(data.items)) throw new Error('共享文件格式不符');
+    var items=data.items;
+    var local=calArr(), has={}, added=0;
+    local.forEach(function(x){ if(x&&x.name) has[x.name]=1; });
+    items.forEach(function(it){
+      if(it && it.name && !has[it.name]){ local.push(it); added++; has[it.name]=1; }
+    });
+    if(local.length>800) local=local.slice(-800);
+    calSet(local);
+    var cfg2=getShareCfg(); cfg2.lastPull=Date.now(); cfg2.pulled=items.length; cfg2.merged=added; setShareCfg(cfg2);
+    if(st) st.textContent='已拉取共享 '+items.length+' 条，本机新增 '+added+' 条';
+    updateCalNote();
+  }).catch(function(err){
+    clearTimeout(t);
+    if(st) st.textContent='拉取失败：'+String(err&&err.message||err).slice(0,60)+'（文件未上传或网络问题，可点重试）';
+  });
+}
+function exportSharedCal(){
+  var data={v:1, updated:new Date().toISOString(), items:calArr()};
+  try{
+    var blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='calibration.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); if(a.parentNode) a.parentNode.removeChild(a); },600);
+    var st=$('shareCalState'); if(st) st.textContent='已导出 calibration.json，上传到仓库 allen 根目录即可共享';
+  }catch(e){ alert('导出失败：'+e.message); }
+}
+function autoPullSharedCal(){ pullSharedCal(); }
+function runAll(){
+  if(!files.length) return;
+  btnRun.disabled=true; btnAdd.disabled=true;
+  progress.style.display='block';
+  var todo=files.slice();
+  results=[];
+  var usedCal=0;
+  calUsedRun=0;
+  var done=0;
+  function next(){
+    if(!todo.length){ finishRun(); return; }
+    var item=todo.shift();
+    /* 校准日志复用：同名文件上次人工校准过 → 直接沿用，跳过规则/OCR/大模型 */
+    var cal=findCal(item.rel);
+    if(cal){
+      var rc={type:cal.type, points:cal.points, conf:'cal', needReview:false,
+              sigText:'沿用上次人工校准：'+cal.typeName+(cal.contentN?('，'+cal.contentN+'内容/场景'):'')+'，'+cal.points+'分',
+              contentN:cal.contentN||0, rel:item.rel, name:item.rel.split('/').pop(), url:item.url, file:item.file,
+              finalType:cal.type, finalPoints:cal.points, note:cal.note||'', ai:false};
+      if(cal.marks) rc.marks=cal.marks;
+      results.push(rc);
+      usedCal++;
+      done++;
+      barFill.style.width=Math.round(done/files.length*100)+'%';
+      progressTxt.textContent='判定中 '+done+'/'+files.length+'：'+(item.rel.split('/').pop()||item.rel)+'（沿用校准）';
+      next();
+      return;
+    }
+    /* 视频/视频封面：不读取内容，按文件格式直接判定（视频=3分；视频封面图=0分） */
+    if(item.isVideo || item.isCover){
+      var rv = item.isVideo
+        ? {type:'video', points:3, conf:'high', needReview:false, contentN:0,
+           sigText:'视频文件，按扩展名判定，3分/个（无法读取视频内容，仅按格式）'}
+        : {type:'cover', points:0, conf:'high', needReview:false, contentN:0,
+           sigText:'文件名含封面标识，视频封面图不计分'};
+      rv.rel=item.rel; rv.name=item.rel.split('/').pop(); rv.url=item.url; rv.file=item.file;
+      rv.finalType=rv.type; rv.finalPoints=rv.points; rv.note=''; rv.ai=false;
+      results.push(rv);
+      done++;
+      barFill.style.width=Math.round(done/files.length*100)+'%';
+      progressTxt.textContent='判定中 '+done+'/'+files.length+'：'+(item.rel.split('/').pop()||item.rel)+(item.isVideo?'（视频）':'（封面）');
+      next();
+      return;
+    }
+    (function(item){
+      var meta={};
+      loadDims(item.file).then(function(d){
+        meta.w=d.w; meta.h=d.h; meta.lowRes=Math.min(d.w,d.h)<300;
+        return drawScaled(item.file, 300);
+      }).then(function(c){
+        var b=analyzeBorder(c);
+        meta.whiteRatio=b.whiteRatio; meta.buckets=b.buckets;
+        return drawScaled(item.file, 200);
+      }).then(function(c2){
+        meta.bboxRatio=productBBoxRatio(c2);
+        /* AI 模式：仅 A+ 长图跳过 OCR（内容数由大模型数主题区块，OCR 对长图无效）；其余图必须跑 OCR（尺寸标注/细节/对比/多场景标题等文字信号都依赖 OCR） */
+        var fnL2=(item.rel||item.name||'').toLowerCase();
+        var longR2=(meta.w/meta.h)>=3 || (meta.w/meta.h)<=(1/3);
+        var aplusFile = /a\+/.test(fnL2) || /手机端|mobile/.test(fnL2) || (longR2 && meta.h>1600);
+        if(aiCfg.mode!=='rule' && aiCfg.key && aplusFile){ return Promise.resolve({text:'',words:[]}); }
+        return runOcr(item.file);
+      }).then(function(ocr){
+        var sig=signalsFromOcr(ocr, meta.w, meta.h);
+        var r=classify(item, meta, sig);
+        r.rel=item.rel; r.name=item.rel.split('/').pop(); r.url=item.url; r.file=item.file;
+        r.finalType=r.type; r.finalPoints=r.points; r.note='';
+        results.push(r);
+      }).catch(function(){
+        var r={type:'review',points:0,conf:'rev',needReview:true,sigText:'读取失败',contentN:0,
+               rel:item.rel,name:item.rel.split('/').pop(),url:item.url,file:item.file,finalType:'review',finalPoints:0,note:''};
+        results.push(r);
+      }).then(function(){
+        done++;
+        barFill.style.width=Math.round(done/files.length*100)+'%';
+        progressTxt.textContent='判定中 '+done+'/'+files.length+'：'+(item.rel.split('/').pop()||item.rel);
+        next();
+      });
+    })(item);
+  }
+  next();
+}
+function finishRun(){
+  btnRun.disabled=false; btnAdd.disabled=false;
+  if(aiCfg.mode!=='rule' && aiCfg.model){
+    aiReview().then(function(){
+      progressTxt.textContent='判定完成：共 '+results.length+' 张'+(calUsedRun>0?('，'+calUsedRun+' 张沿用上次人工校准'):'');
+      updateAIState();
+      persist();
+      renderAll();
+      if(pendingRun){ pendingRun=false; runAll(); return; }
+      setTimeout(function(){ progress.style.display='none'; }, 3500);
+    });
+  } else {
+    progressTxt.textContent='判定完成：共 '+results.length+' 张'+(calUsedRun>0?('，'+calUsedRun+' 张沿用上次人工校准'):'');
+    persist();
+    renderAll();
+    if(pendingRun){ pendingRun=false; runAll(); return; }
+    setTimeout(function(){ progress.style.display='none'; }, 3500);
+  }
+}
+
+/* ========== 大模型增强判定 ========== */
+var LLM_MAP={main:'main','主图':'main',scene:'scene','场景图':'scene',mscene:'mscene','多场景图':'mscene',
+  detail:'detail','细节图':'detail',compare:'compare','对比图':'compare','产品对比图':'compare',
+  size:'size','尺寸图':'size',review:'review','无法判定':'review',
+  apd:'apd','电脑端A+':'apd','电脑端a+':'apd',apm:'apm','手机端A+':'apm','手机端a+':'apm'};
+function pointsFromType(t, n){
+  if(t==='size'){ var p=2; for(var i=0;i<SIZE_BANDS.length;i++){ if(n>=SIZE_BANDS[i][0] && n<=SIZE_BANDS[i][1]){ p=SIZE_BANDS[i][2]; break; } } return p; }
+  if(t==='mscene') return Math.max(1,n||1)*2;
+  if(t==='apd') return Math.max(1,n||1)*2.5;
+  if(t==='apm') return Math.max(1,n||1)*1;
+  return TYPES[t].points;
+}
+function llmJudge(file, task){
+  /* task='ap'：A+ 长图内容区块计数（更高分辨率，专数主题区块）；其他：类型判定 */
+  var side = task==='ap' ? 1600 : 1024;
+  return drawScaled(file, side).then(function(c){
+    var b64=c.toDataURL('image/jpeg',0.82).split(',')[1];
+    var text = task==='ap'
+      ? '你是亚马逊 A+ 详情页超长图的内容区块计数器。数出图中"独立大主题区块"的数量，只输出严格 JSON：{"contentN":整数,"reason":"一句中文说明分了哪些区块"}。区块定义：主视觉横幅/宣传大图每张单独算1个区块（并列多张横幅不要合并，每张都算）、卖点列表区=1、产品展示/细节图区=1、尺寸规格区=1、场景应用区（多格小图算1个区块）=1、对比区=1、文字介绍段=1；同一主题的多张小图算1个区块，不要把同一大区块拆成多个；logo/底部小字不单算。先从上到下逐块数一遍再输出。'
+      : '你是亚马逊美工图的图片类型判定员。看图后只输出一个严格 JSON，不要输出任何其他文字：\n{"type":"main|scene|mscene|detail|compare|size|review","contentN":整数,"reason":"一句中文理由"}\n\n类型定义：\n- main 主图：产品是绝对唯一主角，背景是纯色/极简陪衬（白底、灰底、单色墙、简单桌面）\n- scene 场景图：人物/建筑/家居/节日/婚礼等生活场景布置为主体，产品融入环境中；画面有醒目宣传大标题也算 scene\n- mscene 多场景图：一张图含多个独立场景拼格（各格是不同的生活/使用环境），contentN=独立场景数（白底同款小图、特写小格不算独立场景）\n- detail 细节图：产品局部特写放大（一个或多个特写格）；或主图+多个放大细节特写拼接（大图展示整体、小格放大局部并带特写文字标注，如 Striped Ribbons/Lifelike）→ 整张算 detail\n- compare 产品对比图：Why Choose Us/VS 左右或上下对比；或同一产品/场景不同状态对比（开灯 vs 关灯、before/after、有/无装饰）\n- size 尺寸图：有尺寸标注线/箭头+数字、Product Size/Dimensions 表格、或画面多处（≥3处）数字+单位规格标注，contentN=标注点数\n- review 无法判定\n\n判定硬规则（优先级从高到低，务必遵守）：\n1. 尺寸判定只看标注结构：标注线/箭头+数字、Product Size 表格、或≥3处数字+in/cm规格 → size。单个规格宣传文字（如大标题里的 28 INCH、24 PACK、PCS 数量）不算尺寸标注，按其他特征判\n2. 背景或前景有家居陈设（窗台/书架/绿植/装饰摆件/餐桌/门廊/海滩/婚礼拱门）或人物入镜 → scene，即使产品占画面中央较大比例；只有背景是纯色或极简才可能 main\n3. 画面同时有完整产品大图+多个放大局部特写格（带特写标注文字）→ detail（细节图，整张计分）\n4. 花朵/花头/枝干局部特写：画面主体是花朵花头充满画面、或特写格子展示局部细节（看不到完整花茎或容器整体）→ detail；完整产品展示（花束带花茎/花瓶整体入镜）才可能 main\n5. 场景元素丰富时即使产品居中也是 scene；只有背景纯色/极简、产品独占才算 main\n6. 白底多件装拼图（如 6pcs：白底+多张产品小格+少量场景小格）→ main（多件装展示主图）\n7. 画面明显分为左右/上下两幅且内容几乎相同（同一场景/产品，仅灯光或状态不同，如开灯 vs 关灯）→ compare（对比图）\n8. 图片上的标牌文字（PUMPKIN、WELCOME 等）属于场景布置，不算宣传大标题';
+    var body={ model:aiCfg.model, messages:[{role:'user', content:[
+      {type:'text', text:text},
+      {type:'image_url', image_url:{url:'data:image/jpeg;base64,'+b64}}
+    ]}], max_tokens:300 };
+    return fetch(aiCfg.api+'/chat/completions', {method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiCfg.key},
+      body:JSON.stringify(body)})
+      .then(function(res){ return res.json(); })
+      .then(function(j){
+        if(!j.choices || !j.choices[0]) throw new Error((j.error&&j.error.message)||'API 错误');
+        var txt=j.choices[0].message.content||'';
+        var m=txt.match(/\{[\s\S]*\}/);
+        if(!m) throw new Error('模型未返回 JSON');
+        return JSON.parse(m[0]);
+      });
+  });
+}
+function aiReview(){
+  renderAll(); /* 规则引擎结果先上屏，再逐张大模型复核 */
+  var list=results.filter(function(r){
+    if(aiCfg.mode==='llm') return true;
+    /* hybrid：只让大模型处理规则引擎没有把握的图（无法判定/低置信/多场景图需数场景数/A+需数主题区块），避免覆盖已有可靠信号 */
+    return r.type==='review' || r.conf==='low' || r.type==='mscene';
+  });
+  if(!list.length){ updateAIState(); return Promise.resolve(); }
+  if(!aiCfg.key){ aiState.textContent='AI 增强：未配置密钥，跳过（可在“AI 设置”填写）'; return Promise.resolve(); }
+  var idx=0;
+  function step(){
+    if(idx>=list.length) return Promise.resolve();
+    var r=list[idx]; idx++;
+    aiState.textContent='AI 判定中 '+idx+'/'+list.length+'：'+r.name;
+    var apTask = (r.type==='apd'||r.type==='apm');
+    return llmJudge(r.file, apTask? 'ap':null).then(function(v){
+      if(apTask){
+        /* A+ 内容数：大模型对长图数主题区块；类型已由文件名锁定不覆盖 */
+        var n=Math.max(1, Math.round(v.contentN)||1);
+        r.contentN=n;
+        r.points = r.type==='apm'? n*1 : n*2.5;
+        r.conf='ai'; r.needReview=true;
+        r.sigText='[大模型] '+(v.reason||'')+' ｜ 内容数：'+n+'（'+(r.type==='apm'?'内容数×1':'内容数×2.5')+'），请人工复核';
+        r.ai=true;
+        return step();
+      }
+      var t=LLM_MAP[v.type] || 'review';
+      var n2=Math.max(1, Math.round(v.contentN)||1);
+      if(r.type==='mscene'){
+        /* 多场景图：类型已由文件名/标题锁定，只在大模型也确认多场景时采用其场景数校准积分 */
+        if(t==='mscene'){ r.contentN=n2; }
+        r.points=pointsFromType('mscene', r.contentN);
+        r.conf='ai'; r.needReview=true;
+        r.sigText='[大模型] '+(v.reason||'')+' ｜ 场景数估算：'+r.contentN+'（场景数×2），请人工复核';
+        r.ai=true;
+        return step();
+      }
+      if(t==='review') throw new Error('模型判定为无法判定');
+      r.type=t; r.points=pointsFromType(t,n2);
+      r.contentN=(t==='size'||t==='mscene')? n2 : 0;
+      r.conf='ai'; r.needReview=true;
+      r.sigText='[大模型] '+(v.reason||'')+' ｜ 请人工复核';
+      r.ai=true;
+      return step();
+    }).catch(function(err){
+      r.sigText=(r.sigText||'')+' ｜ [大模型失败] '+err.message;
+      return step();
+    });
+  }
+  return step();
+}
+
+/* ========== 渲染 ========== */
+function typeBadge(t){
+  var map={main:'main',scene:'scene',mscene:'mscene',detail:'detail',compare:'compare',size:'size',apd:'apd',apm:'apm',review:'review'};
+  return '<span class="badge '+map[t]+'">'+TYPES[t].name+'</span>';
+}
+function renderAll(){
+  renderStats(); renderTable(); renderFilters(); refreshHeaderFilterOptions();
+}
+/* ===== 表头筛选：文件名/编码/类型/积分/置信度/复核/备注 ===== */
+var headerFilters={name:'',sku:'',type:'',points:'',conf:'',revType:'',contentN:'',revPts:'',note:''};
+var headerFilterBound=false;
+function bindHeaderFilters(){
+  if(headerFilterBound) return;
+  headerFilterBound=true;
+  document.querySelectorAll('.h-filter .hf').forEach(function(el){
+    var evt = (el.tagName==='SELECT')?'change':'input';
+    el.addEventListener(evt, function(){
+      headerFilters[el.getAttribute('data-f')]=el.value.trim();
+      renderTable();
+    });
+  });
+}
+var H_TYPE_ORDER=['main','scene','mscene','detail','compare','size','apd','apm','video','cover','review'];
+function refreshHeaderFilterOptions(){
+  if(!results.length) return;
+  var types={},pts={},rpts={};
+  results.forEach(function(r){ types[r.type]=1; pts[r.points]=1; rpts[r.finalPoints]=1; });
+  var map={type:types, points:pts, revType:types, revPts:rpts};
+  Object.keys(map).forEach(function(f){
+    var sel=document.querySelector('.h-filter select[data-f="'+f+'"]');
+    if(!sel) return;
+    var cur=sel.value;
+    sel.innerHTML='<option value="">全部</option>';
+    var keys=Object.keys(map[f]);
+    if(f==='type'||f==='revType'){ keys=H_TYPE_ORDER.filter(function(t){ return map[f][t]; }); }
+    else{ keys.sort(function(a,b){ return parseFloat(b)-parseFloat(a); }); }
+    keys.forEach(function(v){
+      var o=document.createElement('option'); o.value=v; o.textContent=TYPES[v]?TYPES[v].name:v; sel.appendChild(o);
+    });
+    sel.value=cur;
+  });
+}
+function currentList(){
+  var list=results;
+  if(filterType!=='all'){
+    list = (filterType==='needReview')
+      ? list.filter(function(r){ return r.needReview || r.conf==='low' || r.type==='review'; })
+      : list.filter(function(r){ return r.finalType===filterType; });
+  }
+  var f=headerFilters;
+  if(f.name){ var n=f.name.toLowerCase(); list=list.filter(function(r){ return (r.name||'').toLowerCase().indexOf(n)>=0 || (r.rel||'').toLowerCase().indexOf(n)>=0; }); }
+  if(f.sku){ var s=f.sku.toLowerCase(); list=list.filter(function(r){ return extractSKU(r.rel).toLowerCase().indexOf(s)>=0; }); }
+  if(f.type) list=list.filter(function(r){ return r.type===f.type; });
+  if(f.points) list=list.filter(function(r){ return String(r.points)===f.points; });
+  if(f.conf) list=list.filter(function(r){ return confTxt(r.conf)===f.conf; });
+  if(f.revType) list=list.filter(function(r){ return r.finalType===f.revType; });
+  if(f.contentN) list=list.filter(function(r){ return String(r.contentN||1)===String(f.contentN); });
+  if(f.revPts) list=list.filter(function(r){ return String(r.finalPoints)===f.revPts; });
+  if(f.note){ var nn=f.note.toLowerCase(); list=list.filter(function(r){ return (r.note||'').toLowerCase().indexOf(nn)>=0; }); }
+  return list;
+}
+/* 删除单行：tbody 事件委托 */
+tbody.addEventListener('click', function(e){
+  var b=e.target.closest('.rowDel');
+  if(b) delRow(b);
+});
+function delRow(btn){
+  var tr=btn.closest('tr');
+  if(!tr) return;
+  var r=lastList[parseInt(tr.getAttribute('data-idx'),10)];
+  if(!r) return;
+  var ri=results.indexOf(r);
+  if(ri>=0){ results.splice(ri,1); }
+  if(r.url) URL.revokeObjectURL(r.url);
+  persist(); renderAll();
+}
+function renderFilters(){
+  var counts={all:results.length,needReview:0};
+  Object.keys(TYPES).forEach(function(k){ counts[k]=0; });
+  results.forEach(function(r){ counts[r.finalType]=(counts[r.finalType]||0)+1; if(r.needReview||r.conf==='low'||r.type==='review') counts.needReview++; });
+  var defs=[['all','全部 '+counts.all],['needReview','待复核 '+counts.needReview]]
+    .concat(Object.keys(TYPES).map(function(k){ return [k, TYPES[k].name+' '+counts[k]]; }));
+  filtersEl.innerHTML='';
+  defs.forEach(function(d){
+    var c=document.createElement('button');
+    c.className='chip'+(filterType===d[0]?' on':'');
+    c.textContent=d[1];
+    c.onclick=function(){ filterType=d[0]; renderFilters(); renderTable(); };
+    filtersEl.appendChild(c);
+  });
+}
+function renderTable(){
+  var list=currentList();
+  lastList=list;
+  tableCount.textContent='共 '+list.length+' 条';
+  var sum=0; results.forEach(function(r){ sum+=r.finalPoints; });
+  totalFinal.textContent=sum;
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="12"><div class="empty">暂无数据——上传图片并点击「开始自动判定」</div></td></tr>'; return; }
+  var html='';
+  list.forEach(function(r){
+    html+='<tr data-idx="'+lastList.indexOf(r)+'">'
+      +'<td>'+(r.url? '<div class="thumb-wrap">'
+        +(r.type==='video'? '<div class="vthumb" title="视频文件（3积分）"><b>&#9654;</b>视频</div>'
+          : '<img class="thumb" src="'+(r.markedThumb||r.url)+'" data-name="'+r.name.replace(/"/g,'&quot;')+'" '+(r.markedThumb?'style="outline:2px solid #ff9f43;"':'')+'>')
+        +'<span class="zoom-ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></span></div>'
+        :'<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#bbb;font-size:10px;">重传<br>恢复</div>')+'</td>'
+      +'<td><div class="fname">'+esc(r.name)+'</div><div class="fpath">'+esc(r.rel)+'</div></td>'
+      +'<td><div class="sku">'+esc(extractSKU(r.rel))+'</div></td>'
+      +'<td>'+typeBadge(r.type)+'</td>'
+      +'<td>'+r.points+'</td>'
+      +'<td><span class="conf '+confCls(r.conf)+'">'+confTxt(r.conf)+'</span></td>'
+      +'<td><div class="sig">'+esc(r.sigText)+'</div></td>'
+      +'<td><select class="revType">'+typeOptions(r.finalType)+'</select></td>'
+      +'<td><input type="number" class="revN" min="1" max="99" value="'+(r.contentN||1)+'" style="width:64px;"></td>'
+      +'<td><input type="number" class="revP" min="0" max="999" step="0.5" value="'+r.finalPoints+'" style="width:70px;"></td>'
+      +'<td><input type="text" class="revNote" value="'+esc(r.note)+'" placeholder="备注" style="width:110px;"></td>'
+      +'<td><button class="rowDel" title="单击删除此行" type="button">删除</button></td>'
+      +'</tr>';
+  });
+  tbody.innerHTML=html;
+  Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(tr){
+    var r=lastList[parseInt(tr.getAttribute('data-idx'),10)];
+    if(r) bindRowEvents(tr, r);
+  });
+  /* 有标记但缩略图尚未合成的行 → 异步合成后刷新（refreshMarkedThumb 内部会再 renderAll，合成后 markedThumb 已存在不再触发） */
+  var needMark=0;
+  results.forEach(function(r){
+    if(r.marks && r.url && !r.markedThumb && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))){ needMark++; refreshMarkedThumb(r); }
+  });
+  btnExport.disabled=false; btnExportHtml.disabled=false; btnClear.disabled=false;
+  tableCard.style.display='block'; statsCard.style.display='block';
+}
+function bindRowEvents(tr, r){
+  var sel=tr.querySelector('.revType'), np=tr.querySelector('.revP'), nn=tr.querySelector('.revN'), note=tr.querySelector('.revNote');
+  function recompute(){
+    r.finalType=sel.value;
+    if(sel.value==='apd'||sel.value==='apm'){
+      var n=Math.max(1,parseInt(nn.value,10)||1);
+      r.contentN=n; r.finalPoints=(sel.value==='apm'? n*1 : n*2.5);
+      np.value=r.finalPoints;
+    } else if(sel.value==='mscene'){
+      var s=Math.max(1,parseInt(nn.value,10)||1);
+      r.contentN=s; r.finalPoints=s*2;
+      np.value=r.finalPoints;
+    } else if(sel.value==='size'){
+      // 尺寸图按标注点数分档，人工可给中间值：保持当前数值由人工填
+    } else if(TYPES[sel.value]){
+      r.finalPoints=TYPES[sel.value].points;
+      np.value=r.finalPoints;
+    }
+    r.note=note.value;
+    persist(); saveCalLog(r); renderStats(); renderFilters();
+  }
+  sel.onchange=recompute;
+  np.onchange=function(){ r.finalPoints=parseFloat(np.value)||0; r.note=note.value; persist(); saveCalLog(r); renderStats(); };
+  note.onchange=function(){ r.note=note.value; persist(); saveCalLog(r); };
+  nn.onchange=recompute;
+}
+function typeOptions(cur){
+  var html='';
+  Object.keys(TYPES).forEach(function(k){
+    html+='<option value="'+k+'"'+(cur===k?' selected':'')+'>'+TYPES[k].name+'</option>';
+  });
+  return html;
+}
+function confCls(c){ return c; }
+function confTxt(c){ return c==='high'?'高':(c==='mid'?'中':(c==='ai'?'大模型':(c==='rev'?'转人工':(c==='cal'?'沿用校准':'低')))); }
+function renderStats(){
+  var counts={}, sums={};
+  results.forEach(function(r){
+    counts[r.finalType]=(counts[r.finalType]||0)+1;
+    sums[r.finalType]=(sums[r.finalType]||0)+r.finalPoints;
+  });
+  var tot=0, n=0; results.forEach(function(r){ tot+=r.finalPoints; n++; });
+  var defs=[['main','主图'],['scene','场景图'],['mscene','多场景图'],['detail','细节图'],['compare','对比图'],['size','尺寸图'],['apd','电脑端A+'],['apm','手机端A+'],['video','视频'],['cover','视频封面'],['review','无法判定']];
+  var html='<div class="stat"><div class="n">'+n+'<small> 张</small></div><div class="l">图片总数</div></div>'
+    +'<div class="stat"><div class="n">'+fmt(tot)+'<small> 分</small></div><div class="l">复核后总积分</div></div>';
+  defs.forEach(function(d){
+    var k=d[0];
+    html+='<div class="stat"><div class="n">'+(counts[k]||0)+'<small> 张</small></div><div class="l">'+d[1]+' · '+(sums[k]||0)+'分</div></div>';
+  });
+  statsGrid.innerHTML=html;
+}
+function fmt(v){ return (Math.round(v*100)/100).toString(); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ========== 持久化 / 导出 ========== */
+function persist(){
+  try{
+    var slim=results.map(function(r){
+      var o={rel:r.rel,name:r.name,type:r.type,points:r.points,conf:r.conf,sigText:r.sigText,needReview:r.needReview,contentN:r.contentN,finalType:r.finalType,finalPoints:r.finalPoints,note:r.note};
+      if(r.marks && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))) o.marks=r.marks;
+      return o;
+    });
+    localStorage.setItem(LS_KEY, JSON.stringify(slim));
+  }catch(e){}
+}
+function restore(){
+  try{
+    var raw=localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    var arr=JSON.parse(raw);
+    if(!Array.isArray(arr)) return;
+    results=arr.map(function(r){ var o={rel:r.rel,name:r.name,url:null,type:r.type,points:r.points,conf:r.conf,sigText:r.sigText,needReview:r.needReview,contentN:r.contentN,finalType:r.finalType,finalPoints:r.finalPoints,note:r.note}; if(r.marks) o.marks=r.marks; return o; });
+    if(results.length){ renderAll(); }
+  }catch(e){}
+}
+btnExport.addEventListener('click', function(){
+  var rows=[['文件名','商品编码','相对路径','AI判定','AI积分','置信度','复核类型','内容/场景数','复核积分','备注']];
+  results.forEach(function(r){
+    rows.push([r.name, extractSKU(r.rel), r.rel, TYPES[r.type].name, r.points, confTxt(r.conf), TYPES[r.finalType].name, r.contentN||'', r.finalPoints, r.note||'']);
+  });
+  var csv=rows.map(function(r){
+    return r.map(function(c){ return '"'+String(c==null?'':c).replace(/"/g,'""')+'"'; }).join(',');
+  }).join('\r\n');
+  var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='判图积分复核表_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+});
+btnClear.addEventListener('click', function(){
+  if(!confirm('确认清空当前全部判定结果？')) return;
+  results=[]; files.forEach(function(f){ if(f.url) URL.revokeObjectURL(f.url); });
+  files=[]; fileCount.textContent=0; btnRun.disabled=true;
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  statsCard.style.display='none'; tableCard.style.display='none';
+  renderStats();
+});
+/* ========== 导出带图 Excel（xlsx，缩略图内嵌，WPS/Excel 可直接打开） ========== */
+var XLSX_RELS='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+var XLSX_PKG='http://schemas.openxmlformats.org/package/2006/relationships';
+function xlsxAnchor(row1, mid, emu){
+  return '<xdr:oneCellAnchor><xdr:from><xdr:col>4</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+(row1-1)+'</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>'
+    +'<xdr:ext cx="'+emu+'" cy="'+emu+'"/>'
+    +'<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'+mid+'" name="img'+mid+'"/><xdr:cNvPicPr/></xdr:nvPicPr>'
+    +'<xdr:blipFill><a:blip xmlns:r="'+XLSX_RELS+'" r:embed="rId'+mid+'"/>'
+    +'<a:stretch><a:fillRect/></a:stretch></xdr:blipFill>'
+    +'<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+emu+'" cy="'+emu+'"/></a:xfrm>'
+    +'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>'
+    +'<xdr:clientData/></xdr:oneCellAnchor>';
+}
+btnExportHtml.addEventListener('click', function(){
+  var btn=btnExportHtml, old=btn.textContent;
+  btn.textContent='生成中…'; btn.disabled=true;
+  var proms=results.map(function(r){
+    if(!r.file || r.type==='video'){ return Promise.resolve({r:r,data:null}); }
+    if(r.marks && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))){
+      /* 带标记：导出合成图（原图+红线+文字），标记坐标 0-1，字号/线宽按原图宽缩放 */
+      return drawScaled(r.file, 1200).then(function(c){
+        var ctx=c.getContext('2d');
+        var w=c.width;
+        ctx.lineCap='round'; ctx.lineJoin='round';
+        (r.marks.paths||[]).forEach(function(p){
+          var sf=w/(p.imgW||w);
+          ctx.strokeStyle=p.color; ctx.lineWidth=p.width*sf;
+          ctx.beginPath();
+          p.pts.forEach(function(pt,i){ var x=pt[0]*w, y=pt[1]*c.height; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+          ctx.stroke();
+        });
+        (r.marks.texts||[]).forEach(function(t){
+          var sf=w/(t.imgW||w);
+          ctx.fillStyle=t.color; ctx.font='bold '+(t.size*sf)+'px sans-serif';
+          ctx.fillText(t.text, t.nx*w, t.ny*c.height);
+        });
+        return {r:r, data:c.toDataURL('image/png')};
+      }).catch(function(){ return {r:r,data:null}; });
+    }
+    return drawScaled(r.file, 220).then(function(c){
+      return {r:r, data:c.toDataURL('image/png')};
+    }).catch(function(){ return {r:r,data:null}; });
+  });
+  Promise.all(proms).then(function(items){
+    if(typeof JSZip==='undefined'){ btn.textContent='需联网加载 JSZip，请检查网络'; btn.disabled=false; return; }
+    var zip=new JSZip();
+    var total=0; results.forEach(function(r){ total+=r.finalPoints; });
+    var rows=['<row r="1"><c r="A1" t="inlineStr"><is><t>'+esc('序号')+'</t></is></c>'
+      +'<c r="B1" t="inlineStr"><is><t>'+esc('文件名')+'</t></is></c>'
+      +'<c r="C1" t="inlineStr"><is><t>'+esc('商品编码')+'</t></is></c>'
+      +'<c r="D1" t="inlineStr"><is><t>'+esc('路径')+'</t></is></c>'
+      +'<c r="E1" t="inlineStr"><is><t>'+esc('图')+'</t></is></c>'
+      +'<c r="F1" t="inlineStr"><is><t>'+esc('AI判定')+'</t></is></c>'
+      +'<c r="G1" t="inlineStr"><is><t>'+esc('AI积分')+'</t></is></c>'
+      +'<c r="H1" t="inlineStr"><is><t>'+esc('置信度')+'</t></is></c>'
+      +'<c r="I1" t="inlineStr"><is><t>'+esc('信号摘要')+'</t></is></c>'
+      +'<c r="J1" t="inlineStr"><is><t>'+esc('复核类型')+'</t></is></c>'
+      +'<c r="K1" t="inlineStr"><is><t>'+esc('内容/场景数')+'</t></is></c>'
+      +'<c r="L1" t="inlineStr"><is><t>'+esc('复核积分')+'</t></is></c>'
+      +'<c r="M1" t="inlineStr"><is><t>'+esc('备注')+'</t></is></c>'
+      +'</row>'];
+    var mediaCount=0, anchors='';
+    var emu=Math.round(220*9525);
+    items.forEach(function(it,i){
+      var r=it.r;
+      var cells=[String(i+1), r.name, extractSKU(r.rel), r.rel||'', r.type==='video'? '【视频文件，本地查看】': '', TYPES[r.type].name, String(r.points), confTxt(r.conf), r.sigText||'', TYPES[r.finalType].name, r.contentN? String(r.contentN):'', String(r.finalPoints), r.note||''];
+      var cs='';
+      cells.forEach(function(cv, ci){
+        cs+='<c r="'+String.fromCharCode(65+ci)+(i+2)+'" t="inlineStr"><is><t>'+esc(cv)+'</t></is></c>';
+      });
+      rows.push('<row r="'+(i+2)+'" ht="168">'+cs+'</row>');
+      if(it.data){
+        mediaCount++;
+        zip.file('xl/media/image'+mediaCount+'.png', it.data.split(',')[1], {base64:true});
+        anchors+=xlsxAnchor(i+2, mediaCount, emu);
+      }
+    });
+    zip.file('[Content_Types].xml',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+      +'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+      +'<Default Extension="xml" ContentType="application/xml"/>'
+      +'<Default Extension="png" ContentType="image/png"/>'
+      +'<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+      +'<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+      +(mediaCount?'<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>':'')
+      +'<Override PartName="/xl/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>'
+      +'<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+      +'</Types>');
+    zip.file('_rels/.rels',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<Relationships xmlns="'+XLSX_PKG+'">'
+      +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+      +'</Relationships>');
+    zip.file('xl/workbook.xml',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="'+XLSX_RELS+'">'
+      +'<sheets><sheet name="判图积分复核表" sheetId="1" r:id="rId1"/></sheets></workbook>');
+    zip.file('xl/_rels/workbook.xml.rels',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<Relationships xmlns="'+XLSX_PKG+'">'
+      +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+      +'<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>'
+      +'<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+      +'</Relationships>');
+    zip.file('xl/worksheets/sheet1.xml',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="'+XLSX_RELS+'">'
+      +'<dimension ref="A1:M'+(items.length+1)+'"/>'
+      +'<cols>'
+      +'<col min="1" max="1" width="5.5"/><col min="2" max="2" width="20"/><col min="3" max="3" width="13"/>'
+      +'<col min="4" max="4" width="34"/><col min="5" max="5" width="14"/><col min="6" max="6" width="9"/><col min="7" max="7" width="7"/>'
+      +'<col min="8" max="8" width="8"/><col min="9" max="9" width="38"/><col min="10" max="10" width="10"/>'
+      +'<col min="11" max="11" width="11"/><col min="12" max="12" width="8"/><col min="13" max="13" width="14"/>'
+      +'</cols>'
+      +'<sheetData>'+rows.join('')+'</sheetData>'
+      +(mediaCount?'<drawing r:id="rId1"/>':'')
+      +'</worksheet>');
+    if(mediaCount){
+      zip.file('xl/worksheets/_rels/sheet1.xml.rels',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        +'<Relationships xmlns="'+XLSX_PKG+'">'
+        +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>'
+        +'</Relationships>');
+      zip.file('xl/drawings/drawing1.xml',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        +'<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+        +anchors+'</xdr:wsDr>');
+      var drels='';
+      for(var i=1;i<=mediaCount;i++){
+        drels+='<Relationship Id="rId'+i+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image'+i+'.png"/>';
+      }
+      zip.file('xl/drawings/_rels/drawing1.xml.rels',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        +'<Relationships xmlns="'+XLSX_PKG+'">'+drels+'</Relationships>');
+    }
+    zip.file('xl/styles.xml',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      +'<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>'
+      +'<fills count="1"><fill><patternFill patternType="none"/></fill></fills>'
+      +'<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+      +'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+      +'<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>'
+      +'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
+      +'</styleSheet>');
+    zip.file('xl/theme/theme1.xml',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office">'
+      +'<a:themeElements><a:clrScheme name="Office">'
+      +'<a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1>'
+      +'<a:dk2><a:srgbClr val="1F497D"/></a:dk2><a:lt2><a:srgbClr val="EEECE1"/></a:lt2>'
+      +'<a:accent1><a:srgbClr val="4F81BD"/></a:accent1><a:accent2><a:srgbClr val="C0504D"/></a:accent2>'
+      +'<a:accent3><a:srgbClr val="9BBB59"/></a:accent3><a:accent4><a:srgbClr val="8064A2"/></a:accent4>'
+      +'<a:accent5><a:srgbClr val="4BACC6"/></a:accent5><a:accent6><a:srgbClr val="F79646"/></a:accent6>'
+      +'<a:hlink><a:srgbClr val="0000FF"/></a:hlink><a:folHlink><a:srgbClr val="800080"/></a:folHlink>'
+      +'</a:clrScheme>'
+      +'<a:fontScheme name="Office"><a:majorFont><a:latin typeface="Cambria"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>'
+      +'<a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme>'
+      +'<a:fmtScheme name="Office">'
+      +'<a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'
+      +'<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="50000"/><a:satMod val="300000"/></a:schemeClr></a:gs>'
+      +'<a:gs pos="35000"><a:schemeClr val="phClr"><a:tint val="37000"/><a:satMod val="300000"/></a:schemeClr></a:gs>'
+      +'<a:gs pos="100000"><a:schemeClr val="phClr"><a:tint val="15000"/><a:satMod val="350000"/></a:schemeClr></a:gs></a:gsLst>'
+      +'<a:lin ang="16200000" scaled="1"/></a:gradFill>'
+      +'<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:shade val="51000"/><a:satMod val="130000"/></a:schemeClr></a:gs>'
+      +'<a:gs pos="80000"><a:schemeClr val="phClr"><a:shade val="93000"/><a:satMod val="130000"/></a:schemeClr></a:gs>'
+      +'<a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="94000"/><a:satMod val="135000"/></a:schemeClr></a:gs></a:gsLst>'
+      +'<a:lin ang="16200000" scaled="0"/></a:gradFill></a:fillStyleLst>'
+      +'<a:lnStyleLst><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"><a:shade val="95000"/><a:satMod val="105000"/></a:schemeClr></a:solidFill><a:prstDash val="solid"/></a:ln>'
+      +'<a:ln w="25400" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>'
+      +'<a:ln w="38100" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln></a:lnStyleLst>'
+      +'<a:effectStyleLst><a:effectStyle><a:effectLst><a:outerShdw blurRad="40000" dist="20000" dir="5400000" rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="38000"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle>'
+      +'<a:effectStyle><a:effectLst><a:outerShdw blurRad="40000" dist="23000" dir="5400000" rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="35000"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle>'
+      +'<a:effectStyle><a:effectLst><a:outerShdw blurRad="40000" dist="23000" dir="5400000" rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="35000"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle></a:effectStyleLst>'
+      +'<a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'
+      +'<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="40000"/><a:satMod val="350000"/></a:schemeClr></a:gs>'
+      +'<a:gs pos="40000"><a:schemeClr val="phClr"><a:tint val="45000"/><a:shade val="99000"/><a:satMod val="350000"/></a:schemeClr></a:gs>'
+      +'<a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="20000"/><a:satMod val="255000"/></a:schemeClr></a:gs></a:gsLst>'
+      +'<a:path path="circle"><a:fillToRect l="50000" t="-80000" r="50000" b="180000"/></a:path></a:gradFill>'
+      +'<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:shade val="90000"/><a:satMod val="200000"/></a:schemeClr></a:gs>'
+      +'<a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="27000"/><a:satMod val="200000"/></a:schemeClr></a:gs></a:gsLst>'
+      +'<a:path path="circle"><a:fillToRect l="50000" t="80000" r="50000" b="80000"/></a:path></a:gradFill></a:bgFillStyleLst>'
+      +'</a:fmtScheme></a:themeElements></a:theme>');
+    zip.generateAsync({type:'blob'}).then(function(blob){
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='判图积分复核表_带图_'+new Date().toISOString().slice(0,10)+'.xlsx';
+      a.click();
+      btn.textContent=old; btn.disabled=false;
+    });
+  });
+});
+/* 规则弹层 */
+$('btnRules').addEventListener('click', function(){ ruleMask.style.display='flex'; var c=$('calLogState'); if(c) c.textContent=calCount()+' 条'; });
+$('btnClearCal').addEventListener('click', clearCalLog);
+$('btnPullCal').addEventListener('click', pullSharedCal);
+$('btnExportCal').addEventListener('click', exportSharedCal);
+autoPullSharedCal();
+$('ruleClose').addEventListener('click', function(){ ruleMask.style.display='none'; });
+ruleMask.addEventListener('click', function(e){ if(e.target===ruleMask) ruleMask.style.display='none'; });
+
+/* ===== 全屏看图/标注/播放视频 ===== */
+var viewer=$('viewer'), vStage=$('vStage'), vName=$('vName'), vMeta=$('vMeta'), vClose=$('vClose'), vDone=$('vDone'), vTools=$('vTools');
+var vtPen=$('vtPen'), vtText=$('vtText'), vtMove=$('vtMove'), vtColor=$('vtColor'), vtWidth=$('vtWidth'), vtFont=$('vtFont'), vtClear=$('vtClear');
+var viewerOpen=false, curRow=null, curImg=null, curImgW=0;
+var vTool='pen', vColor='#ff3b30', vWidth=0.6, vFont=10;
+var scale=1, ox=0, oy=0, imgW=0, imgH=0;
+var marks={paths:[],texts:[]};
+var drawing=false, dragging=false, lastX=0, lastY=0;
+var vCanvas=null;
+
+function setTool(t){ vTool=t; vtPen.classList.toggle('on',t==='pen'); vtText.classList.toggle('on',t==='text'); vtMove.classList.toggle('on',t==='move');
+  if(vCanvas) vCanvas.style.cursor = t==='move'? 'grab' : 'crosshair'; }
+vtPen.addEventListener('click', function(){ setTool('pen'); });
+vtText.addEventListener('click', function(){ setTool('text'); });
+vtMove.addEventListener('click', function(){ setTool('move'); });
+vtColor.addEventListener('change', function(){ vColor=this.value; });
+vtWidth.addEventListener('change', function(){ vWidth=parseFloat(this.value)||0.6; });
+vtFont.addEventListener('change', function(){ vFont=parseInt(this.value,10)||10; });
+vtClear.addEventListener('click', function(){ if(!curImg) return; marks={paths:[],texts:[]}; draw(); });
+
+function openImage(src, row){
+  vStage.innerHTML='';
+  vCanvas=document.createElement('canvas');
+  vStage.appendChild(vCanvas);
+  vTools.style.display='flex';
+  curRow=row; curImg=new Image();
+  marks = (row && row.marks && (row.marks.paths||row.marks.texts)) ? row.marks : {paths:[],texts:[]};
+  if(!marks.paths) marks.paths=[]; if(!marks.texts) marks.texts=[];
+  curImg.onload=function(){
+    imgW=curImg.naturalWidth; imgH=curImg.naturalHeight; curImgW=imgW;
+    var cw=vStage.clientWidth||Math.min(window.innerWidth*0.92,1200);
+    var ch=vStage.clientHeight||Math.min(window.innerHeight*0.72,900);
+    vCanvas.width=cw; vCanvas.height=ch;
+    scale=Math.min(cw/imgW, ch/imgH)*0.96;
+    ox=(cw-imgW*scale)/2; oy=(ch-imgH*scale)/2;
+    draw();
+  };
+  curImg.onerror=function(){ vMeta.textContent='图片加载失败'; };
+  curImg.src=src;
+}
+function draw(){
+  if(!curImg||!vCanvas) return;
+  var ctx=vCanvas.getContext('2d');
+  ctx.clearRect(0,0,vCanvas.width,vCanvas.height);
+  ctx.save();
+  ctx.translate(ox,oy); ctx.scale(scale,scale);
+  ctx.drawImage(curImg,0,0,imgW,imgH);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  marks.paths.forEach(function(p){
+    ctx.strokeStyle=p.color; ctx.lineWidth=p.width;
+    ctx.beginPath();
+    p.pts.forEach(function(pt,i){ var x=pt[0]*imgW, y=pt[1]*imgH; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+    ctx.stroke();
+  });
+  marks.texts.forEach(function(t){
+    ctx.fillStyle=t.color; ctx.font='bold '+(t.size*scale)+'px sans-serif';
+    ctx.fillText(t.text, t.nx*imgW, t.ny*imgH);
+  });
+  ctx.restore();
+}
+function evPos(e){
+  var r=vCanvas.getBoundingClientRect();
+  return {x:e.clientX-r.left, y:e.clientY-r.top};
+}
+function toImg(e){
+  var p=evPos(e);
+  return [(p.x-ox)/scale/imgW, (p.y-oy)/scale/imgH];
+}
+/* canvas 事件委托到 stage（canvas 动态创建） */
+vStage.addEventListener('wheel', function(e){
+  if(!curImg||!vCanvas) return;
+  e.preventDefault();
+  var p=evPos(e);
+  var f=e.deltaY<0?1.12:1/1.12;
+  var ns=Math.min(10,Math.max(0.3,scale*f));
+  f=ns/scale;
+  ox=p.x-(p.x-ox)*f; oy=p.y-(p.y-oy)*f;
+  scale=ns; draw();
+},{passive:false});
+vStage.addEventListener('mousedown', function(e){
+  if(!curImg||!vCanvas) return;
+  var p=evPos(e); lastX=p.x; lastY=p.y;
+  if(vTool==='pen'){
+    drawing=true;
+    marks.paths.push({color:vColor,width:vWidth,pts:[toImg(e)],imgW:curImgW});
+    draw();
+  } else if(vTool==='text'){
+    var txt=prompt('输入标记文字：','');
+    if(txt && txt.trim()){ marks.texts.push({color:vColor,size:vFont,nx:toImg(e)[0],ny:toImg(e)[1],text:txt.trim(),imgW:curImgW}); draw(); }
+  } else {
+    dragging=true; if(vCanvas) vCanvas.style.cursor='grabbing';
+  }
+});
+vStage.addEventListener('mousemove', function(e){
+  if(!curImg||!vCanvas) return;
+  if(drawing){
+    marks.paths[marks.paths.length-1].pts.push(toImg(e));
+    draw();
+  } else if(dragging){
+    var p=evPos(e);
+    ox+=p.x-lastX; oy+=p.y-lastY;
+    lastX=p.x; lastY=p.y; draw();
+  }
+});
+vStage.addEventListener('mouseup', function(){ drawing=false; dragging=false; if(vCanvas) vCanvas.style.cursor=vTool==='move'?'grab':'crosshair'; });
+vStage.addEventListener('mouseleave', function(){ drawing=false; dragging=false; });
+
+tbody.addEventListener('dblclick', function(e){
+  var el=e.target.closest('.thumb');
+  if(!el || !el.src) return;
+  vName.textContent=el.getAttribute('data-name')||'';
+  var tr=el.closest('tr');
+  var row=null;
+  if(tr){
+    var t=tr.querySelector('.badge')? tr.querySelector('.badge').textContent:'';
+    var p=tr.children[3]? tr.children[3].textContent.trim():'';
+    var rv=tr.querySelector('.revT')? tr.querySelector('.revT').value:'';
+    vMeta.textContent='AI 判定：'+t+'　积分：'+p+(rv&&rv!==t? '　复核：'+rv:'');
+    var idx=parseInt(tr.getAttribute('data-idx'),10);
+    if(!isNaN(idx) && lastList[idx]) row=lastList[idx];
+  } else { vMeta.textContent=''; }
+  if(el.tagName==='IMG'){ openImage(el.src, row); }
+  viewer.classList.add('show'); viewerOpen=true;
+});
+function commitMarks(){
+  if(curRow && curImg){ curRow.marks=marks; persist(); refreshMarkedThumb(curRow); }
+}
+function closeViewer(save){ if(save) commitMarks(); viewer.classList.remove('show'); vStage.innerHTML=''; vCanvas=null; curImg=null; curRow=null; viewerOpen=false; }
+vDone.addEventListener('click', function(){ closeViewer(true); });
+vClose.addEventListener('click', function(){ closeViewer(false); });
+document.addEventListener('keydown', function(e){ if(e.key==='Escape' && viewerOpen) closeViewer(false); });
+/* 表格缩略图合成标记图（带标记的行显示红线+文字） */
+function refreshMarkedThumb(r){
+  if(!r.file || !r.marks) return;
+  var c=document.createElement('canvas'); c.width=260; c.height=260;
+  var ctx=c.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,260,260);
+  var im=new Image();
+  im.onload=function(){
+    var s=Math.min(260/im.naturalWidth,260/im.naturalHeight)*0.96;
+    var w=im.naturalWidth*s, h=im.naturalHeight*s;
+    var dx=(260-w)/2, dy=(260-h)/2;
+    ctx.drawImage(im,dx,dy,w,h);
+    var mk=r.marks;
+    ctx.lineCap='round';
+    (mk.paths||[]).forEach(function(p){
+      var sf=w/(p.imgW||w);
+      ctx.strokeStyle=p.color; ctx.lineWidth=p.width*sf;
+      ctx.beginPath();
+      p.pts.forEach(function(pt,i){ var x=dx+pt[0]*w, y=dy+pt[1]*h; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+      ctx.stroke();
+    });
+    (mk.texts||[]).forEach(function(t){
+      var sf=w/(t.imgW||w);
+      ctx.fillStyle=t.color; ctx.font='bold '+(t.size*sf)+'px sans-serif';
+      ctx.fillText(t.text, dx+t.nx*w, dy+t.ny*h);
+    });
+    r.markedThumb=c.toDataURL('image/png');
+    renderAll();
+  };
+  im.src=r.url;
+}
+function restoreMarks(){
+  results.forEach(function(r){ if(r.marks && (r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length)){ if(!r.markedThumb) refreshMarkedThumb(r); } });
+}
+
+bindHeaderFilters();
+restore();
+})();
+</script>
+</body>
+</html>
