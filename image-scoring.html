@@ -841,12 +841,13 @@ var CAL_KEY='imgScoreCalLog';
 function saveCalLog(r){
   try{
     if(!r || !r.name) return;
+    var key=r.rel||r.name;
     var arr=JSON.parse(localStorage.getItem(CAL_KEY)||'[]');
-    var rec={name:r.name, type:r.finalType, typeName:TYPES[r.finalType].name,
+    var rec={name:key, type:r.finalType, typeName:TYPES[r.finalType].name,
              contentN:r.contentN||0, points:r.finalPoints, note:r.note||'', time:Date.now()};
     if(r.marks && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))) rec.marks=r.marks;
     var i=-1;
-    for(var k=0;k<arr.length;k++){ if(arr[k].name===r.name){ i=k; break; } }
+    for(var k=0;k<arr.length;k++){ if(arr[k].name===key){ i=k; break; } }
     if(i>=0) arr[i]=rec; else arr.push(rec);
     if(arr.length>800) arr=arr.slice(-800);
     localStorage.setItem(CAL_KEY, JSON.stringify(arr));
@@ -855,9 +856,17 @@ function saveCalLog(r){
 }
 function findCal(rel){
   var name=(rel||'').split('/').pop();
+  var withPath=(rel||'')!==name;
   try{
     var arr=JSON.parse(localStorage.getItem(CAL_KEY)||'[]');
-    for(var i=arr.length-1;i>=0;i--){ if(arr[i].name===name) return arr[i]; }
+    for(var i=arr.length-1;i>=0;i--){
+      var rec=arr[i], rn=rec.name||'';
+      if(withPath){
+        if(rn===rel) return rec;
+      }else{
+        if(rn===name && rn.indexOf('/')<0) return rec;
+      }
+    }
   }catch(e){}
   return null;
 }
@@ -979,7 +988,7 @@ function pullLanCal(){
 }
 function pushLanCal(r){
   if(!lanOn() || !r || !r.name) return;
-  var rec={name:r.name, type:r.finalType, typeName:TYPES[r.finalType].name, contentN:r.contentN||0, points:r.finalPoints, note:r.note||''};
+  var rec={name:r.rel||r.name, type:r.finalType, typeName:TYPES[r.finalType].name, contentN:r.contentN||0, points:r.finalPoints, note:r.note||''};
   if(r.marks && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))) rec.marks=r.marks;
   lanFetch('/calibration','POST',{items:[rec]}).then(function(d){
     var st=$('lanState'); if(st) st.textContent='已写入局域网库：'+r.name;
