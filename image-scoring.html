@@ -867,7 +867,7 @@ function clearCalLog(){
   var c=$('calLogState'); if(c) c.textContent='校准记录已清空（0 条）';
 }
 /* ========== 共享校准（GitHub 方案A：打开页面自动拉取团队校准经验；导出后手动上传仓库） ========== */
-var SHARE_CAL_URL='https://cdn.jsdelivr.net/gh/28465151804ly-collab/allen@main/calibration.json';
+var SHARE_CAL_URL='https://raw.githubusercontent.com/28465151804ly-collab/allen/main/calibration.json';
 var SHARE_KEY='imgScoreShareCfg';
 function getShareCfg(){ try{ return JSON.parse(localStorage.getItem(SHARE_KEY)||'{}'); }catch(e){ return {}; } }
 function setShareCfg(o){ try{ localStorage.setItem(SHARE_KEY, JSON.stringify(o)); }catch(e){} }

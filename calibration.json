@@ -1,5 +1,9 @@
 {
   "v": 1,
-  "updated": "2026-09-09T00:00:00+08:00",
-  "items": []
+  "updated": "2026-09-09T12:00:00+08:00",
+  "items": [
+    {"name":"26-HH01801-.mp4","type":"video","typeName":"视频","contentN":0,"points":3,"note":"视频固定3分（按格式判定，不读内容）","time":1757400000000},
+    {"name":"26-HH01801--封面.jpg","type":"cover","typeName":"视频封面","contentN":0,"points":0,"note":"视频封面不算积分","time":1757400000001},
+    {"name":"26-ZSD0601-2.jpg","type":"compare","typeName":"产品对比图","contentN":1,"points":2,"note":"同场景开灯vs关灯对比","time":1757400000002}
+  ]
 }
