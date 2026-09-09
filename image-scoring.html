@@ -889,15 +889,26 @@ function pullSharedCal(){
     clearTimeout(t);
     if(!data || !Array.isArray(data.items)) throw new Error('共享文件格式不符');
     var items=data.items;
-    var local=calArr(), has={}, added=0;
+    var local=calArr(), has={}, added=0, updated=0;
     local.forEach(function(x){ if(x&&x.name) has[x.name]=1; });
     items.forEach(function(it){
-      if(it && it.name && !has[it.name]){ local.push(it); added++; has[it.name]=1; }
+      if(!it || !it.name) return;
+      var rec={name:it.name, type:it.type, typeName:it.typeName||'', contentN:it.contentN||0, points:it.points||0, note:it.note||'', time:it.time||0};
+      if(it.marks) rec.marks=it.marks;
+      if(!has[it.name]){
+        local.push(rec); added++;
+      }else{
+        var idx=-1;
+        for(var k=local.length-1;k>=0;k--){ if(local[k].name===it.name){ idx=k; break; } }
+        if(idx>=0 && (it.time||0) > (local[idx].time||0)){
+          local[idx]=rec; updated++;
+        }
+      }
     });
     if(local.length>800) local=local.slice(-800);
     calSet(local);
     var cfg2=getShareCfg(); cfg2.lastPull=Date.now(); cfg2.pulled=items.length; cfg2.merged=added; setShareCfg(cfg2);
-    if(st) st.textContent='已拉取共享 '+items.length+' 条，本机新增 '+added+' 条';
+    if(st) st.textContent='已拉取共享 '+items.length+' 条：本机新增 '+added+' 条，更新 '+updated+' 条';
     updateCalNote();
   }).catch(function(err){
     clearTimeout(t);
@@ -940,20 +951,27 @@ function pullLanCal(){
   var st=$('lanState'); if(st) st.textContent='拉取中…';
   return lanFetch('/calibration').then(function(data){
     var items=(data && data.items)||[];
-    var local=calArr(), has={}, added=0;
+    var local=calArr(), has={}, added=0, updated=0;
     local.forEach(function(x){ if(x&&x.name) has[x.name]=1; });
     items.forEach(function(it){
-      if(it && it.name && !has[it.name]){
-        var rec={name:it.name, type:it.type, typeName:it.typeName||'', contentN:it.contentN||0, points:it.points||0, note:it.note||'', time:Date.now()};
-        if(it.marks) rec.marks=it.marks;
+      if(!it || !it.name) return;
+      var rec={name:it.name, type:it.type, typeName:it.typeName||'', contentN:it.contentN||0, points:it.points||0, note:it.note||'', time:it.time||0};
+      if(it.marks) rec.marks=it.marks;
+      if(!has[it.name]){
         local.push(rec); added++;
+      }else{
+        var idx=-1;
+        for(var k=local.length-1;k>=0;k--){ if(local[k].name===it.name){ idx=k; break; } }
+        if(idx>=0 && (it.time||0) > (local[idx].time||0)){
+          local[idx]=rec; updated++;
+        }
       }
     });
     if(local.length>800) local=local.slice(-800);
     calSet(local);
-    if(st) st.textContent='局域网已拉取 '+items.length+' 条，本机新增 '+added+' 条';
+    if(st) st.textContent='局域网已拉取 '+items.length+' 条：本机新增 '+added+' 条，更新 '+updated+' 条';
     updateCalNote();
-    return added;
+    return added+updated;
   }).catch(function(err){
     if(st) st.textContent='局域网拉取失败：'+String(err&&err.message||err).slice(0,50);
     return 0;
