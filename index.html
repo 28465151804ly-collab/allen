@@ -1370,7 +1370,7 @@ function refreshHeaderFilterOptions(){
     if(f==='type'||f==='revType'){ keys=H_TYPE_ORDER.filter(function(t){ return map[f][t]; }); }
     else{ keys.sort(function(a,b){ return parseFloat(b)-parseFloat(a); }); }
     keys.forEach(function(v){
-      var o=document.createElement('option'); o.value=v; o.textContent=TYPES[v]?TYPES[v].name:typeNameOf(v); sel.appendChild(o);
+      var o=document.createElement('option'); o.value=v; o.textContent=typeNameOf(v); sel.appendChild(o);
     });
     sel.value=cur;
   });
@@ -1416,7 +1416,7 @@ function renderFilters(){
   var customDefs=[];
   customTypes(CUR_SYS).forEach(function(ct){ if(counts[ct.id]) customDefs.push([ct.id, ct.name+' '+counts[ct.id]]); });
   var defs=[['all','全部 '+counts.all],['needReview','待复核 '+counts.needReview]]
-    .concat(Object.keys(TYPES).map(function(k){ return [k, TYPES[k].name+' '+counts[k]]; }))
+    .concat(Object.keys(TYPES).map(function(k){ return [k, typeNameOf(k)+' '+counts[k]]; }))
     .concat(customDefs);
   filtersEl.innerHTML='';
   defs.forEach(function(d){
@@ -1502,7 +1502,7 @@ function bindRowEvents(tr, r){
 function typeOptions(cur){
   var html='';
   Object.keys(TYPES).forEach(function(k){
-    html+='<option value="'+k+'"'+(cur===k?' selected':'')+'>'+TYPES[k].name+'</option>';
+    html+='<option value="'+k+'"'+(cur===k?' selected':'')+'>'+typeNameOf(k)+'</option>';
   });
   customTypes(CUR_SYS).forEach(function(ct){
     html+='<option value="'+ct.id+'"'+(cur===ct.id?' selected':'')+'>'+ct.name+'</option>';
@@ -1958,6 +1958,16 @@ function savePtsCfg(sys, cfg){
   c[sys]=cfg;
   localStorage.setItem(POINTS_LS, JSON.stringify(c));
 }
+function ptsNames(sys){
+  var c={}; try{ c=JSON.parse(localStorage.getItem(POINTS_LS)||'{}'); }catch(e){}
+  return (c[sys]||{}).names || {};
+}
+function savePtsNames(sys, nm){
+  var c={}; try{ c=JSON.parse(localStorage.getItem(POINTS_LS)||'{}'); }catch(e){}
+  if(!c[sys]) c[sys]={};
+  c[sys].names=nm;
+  localStorage.setItem(POINTS_LS, JSON.stringify(c));
+}
 function customTypes(sys){
   var c={}; try{ c=JSON.parse(localStorage.getItem(POINTS_LS)||'{}'); }catch(e){}
   return (c[sys]||{}).custom || [];
@@ -1969,7 +1979,10 @@ function saveCustomTypes(sys, arr){
   localStorage.setItem(POINTS_LS, JSON.stringify(c));
 }
 function typeNameOf(t){
-  if(TYPES[t]) return TYPES[t].name;
+  if(TYPES[t]){
+    var nm=ptsNames(CUR_SYS)[t];
+    return nm || TYPES[t].name;
+  }
   if(String(t).indexOf('c_')===0){
     var arr=customTypes(CUR_SYS);
     for(var i=0;i<arr.length;i++){ if(arr[i].id===t) return arr[i].name; }
@@ -2007,17 +2020,22 @@ function initSys(){
     var btn=e.target;
     if(!btn || btn.tagName!=='BUTTON') return;
     var tr=btn.closest('tr'); if(!tr) return;
-    var key=PTS_ROWS[Array.prototype.indexOf.call(tr.parentNode.children, tr)][0];
-    var valTd=tr.children[1];
+    var key=tr.getAttribute('data-k');
+    var nameTd=tr.querySelector('.pt-name'), valTd=tr.children[1];
     if(btn.textContent==='编辑'){
-      var cur=ptsCfg(CUR_SYS)[key];
-      valTd.innerHTML='<input type="number" step="0.5" min="0" value="'+cur+'">';
+      var cfg=ptsCfg(CUR_SYS), nm=ptsNames(CUR_SYS);
+      nameTd.innerHTML='<input class="pt-name-in" value="'+esc(nm[key]||PTS_ROWS.filter(function(r){return r[0]===key;})[0][1])+'" style="width:150px;padding:5px 8px;border:1px solid var(--accent);border-radius:8px;font-size:13px;">';
+      valTd.innerHTML='<input type="number" step="0.5" min="0" value="'+cfg[key]+'" style="width:70px;padding:5px 7px;border:1px solid var(--accent);border-radius:8px;font-size:13px;text-align:center;">';
       btn.textContent='保存'; btn.style.background='#52C41A'; btn.style.color='#fff'; btn.style.borderColor='#52C41A';
     } else {
-      var inp=valTd.querySelector('input');
-      var v=parseFloat(inp.value);
-      if(isNaN(v)||v<0){ inp.focus(); return; }
+      var inpName=nameTd.querySelector('.pt-name-in');
+      var inpVal=valTd.querySelector('input');
+      var name=inpName? inpName.value.trim() : '';
+      var v=parseFloat(inpVal.value);
+      if(!name && inpName){ inpName.focus(); return; }
+      if(isNaN(v)||v<0){ if(inpVal) inpVal.focus(); return; }
       var cfg=ptsCfg(CUR_SYS); cfg[key]=v; savePtsCfg(CUR_SYS,cfg);
+      if(inpName){ var nm=ptsNames(CUR_SYS); nm[key]=name; savePtsNames(CUR_SYS,nm); }
       results.forEach(function(r){ if(r.finalType!=='review') r.finalPoints=pointOf(r.finalType, r.contentN||0); });
       renderPts(); renderAll();
     }
@@ -2076,10 +2094,13 @@ function editCustomRow(idx){
 }
 function renderPts(){
   var tbody=$('ptsTbody'); tbody.innerHTML='';
-  var cfg=ptsCfg(CUR_SYS);
+  var cfg=ptsCfg(CUR_SYS); var nm=ptsNames(CUR_SYS);
   PTS_ROWS.forEach(function(row){
+    var key=row[0];
+    var name=nm[key] || row[1];
     var tr=document.createElement('tr');
-    tr.innerHTML='<td>'+row[1]+'</td><td style="text-align:center;font-weight:600;">'+cfg[row[0]]+'</td><td style="text-align:center;"><button class="btn" style="padding:2px 12px;font-size:12px;">编辑</button></td>';
+    tr.setAttribute('data-k', key);
+    tr.innerHTML='<td class="pt-name">'+esc(name)+'</td><td style="text-align:center;font-weight:600;">'+cfg[key]+'</td><td style="text-align:center;"><button class="btn" style="padding:2px 12px;font-size:12px;">编辑</button></td>';
     tbody.appendChild(tr);
   });
 }
