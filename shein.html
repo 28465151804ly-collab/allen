@@ -163,8 +163,9 @@
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
       <button class="btn primary" id="btnRun" disabled>开始自动判定</button>
       <button class="btn" id="btnAdd" >追加选择图片/文件夹</button>
-      <button class="btn" id="btnDir">选择文件夹（自动拆解）</button>
+      <button class="btn" id="btnDir" title="可按住 Ctrl/Shift 一次选择多个文件夹；也可以多次点击选择，自动合并去重">选择文件夹（自动拆解）</button>
       <input type="file" id="dirInput" webkitdirectory multiple style="display:none;">
+      <span style="font-size:12px;color:var(--sub);align-self:center;">可一次多选文件夹（Ctrl 点选），或多次点击自动合并</span>
       <span style="font-size:12px;color:var(--sub);align-self:center;" id="ocrState">OCR 引擎：未加载（判定文字信号需要联网加载一次）</span>
       <span style="font-size:12px;color:var(--sub);align-self:center;" id="aiState"></span>
     </div>
