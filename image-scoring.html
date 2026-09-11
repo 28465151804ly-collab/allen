@@ -157,15 +157,15 @@
     <h2>1. 上传图片 <span class="tag">支持拖入文件夹 / 多选，自动递归读取子目录</span></h2>
     <div id="drop">
       <div class="big">拖拽文件夹或图片到这里，或点击选择</div>
-      <div class="small">已选 <b id="fileCount">0</b> 张图片</div>
+      <div class="small">已选 <b id="fileCount">0</b> 张图片<span id="folderInfo" style="margin-left:10px;color:var(--sub);"></span></div>
       <input type="file" id="fileInput" multiple accept="image/*,video/*">
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
       <button class="btn primary" id="btnRun" disabled>开始自动判定</button>
       <button class="btn" id="btnAdd" >追加选择图片/文件夹</button>
-      <button class="btn" id="btnDir" title="可按住 Ctrl/Shift 一次选择多个文件夹；也可以多次点击选择，自动合并去重">选择文件夹（自动拆解）</button>
+      <button class="btn" id="btnDir" title="系统弹窗一次只能选一个文件夹：可多次点击逐个添加（自动合并去重），或直接把多个文件夹拖入上方上传区">选择文件夹（自动拆解）</button>
       <input type="file" id="dirInput" webkitdirectory multiple style="display:none;">
-      <span style="font-size:12px;color:var(--sub);align-self:center;">可一次多选文件夹（Ctrl 点选），或多次点击自动合并</span>
+      <span style="font-size:12px;color:var(--sub);align-self:center;">文件夹弹窗一次只能选 1 个：可多次点击逐个添加，或拖拽多个文件夹一次性加入</span>
       <span style="font-size:12px;color:var(--sub);align-self:center;" id="ocrState">OCR 引擎：未加载（判定文字信号需要联网加载一次）</span>
       <span style="font-size:12px;color:var(--sub);align-self:center;" id="aiState"></span>
     </div>
@@ -534,6 +534,13 @@ function scanEntry(entry, path){
     } else { resolve([]); }
   });
 }
+var folders=[];
+function updateFolderInfo(){
+  var el=$('folderInfo'); if(!el) return;
+  if(!folders.length){ el.textContent=''; return; }
+  var names=folders.slice(0,6).join('、');
+  el.textContent='｜已选 '+folders.length+' 个文件夹：'+names+(folders.length>6?' 等':'');  
+}
 function addFiles(list){
   var added=0;
   Array.prototype.forEach.call(list, function(f){
@@ -542,10 +549,15 @@ function addFiles(list){
     var isImg=IMG_RE.test(f.name);
     if(!isVid && !isImg) return;
     var rel = f._rel || f.webkitRelativePath || f.name;
+    if(f.webkitRelativePath){
+      var top=f.webkitRelativePath.split('/')[0];
+      if(top && folders.indexOf(top)<0) folders.push(top);
+    }
     if(files.some(function(x){ return x.rel===rel; })) return;
     files.push({file:f, rel:rel, url:URL.createObjectURL(f), isVideo:isVid, isCover:(isImg&&!isVid)&&COVER_RE.test(f.name)});
     added++;
   });
+  updateFolderInfo();
   fileCount.textContent = files.length;
   btnRun.disabled = files.length===0;
   if(added){ ensureOcr(); }
@@ -1660,7 +1672,7 @@ btnExport.addEventListener('click', function(){
 btnClear.addEventListener('click', function(){
   if(!confirm('确认清空当前全部判定结果？')) return;
   results=[]; files.forEach(function(f){ if(f.url) URL.revokeObjectURL(f.url); });
-  files=[]; fileCount.textContent=0; btnRun.disabled=true;
+  files=[]; folders=[]; updateFolderInfo(); fileCount.textContent=0; btnRun.disabled=true;
   try{ localStorage.removeItem(LS_KEY); }catch(e){}
   statsCard.style.display='none'; tableCard.style.display='none';
   renderStats();
