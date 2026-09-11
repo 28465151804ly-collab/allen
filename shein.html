@@ -221,21 +221,21 @@
 <div class="modal-mask" id="ruleMask">
   <div class="modal">
     <span class="close" id="ruleClose">✕</span>
-    <h3>判定规则 v7</h3>
+    <h3><span id="ruleTitle">判定规则</span></h3>
     <table>
       <thead><tr><th>类型</th><th>识别信号</th><th>积分</th></tr></thead>
       <tbody>
-        <tr><td>主图</td><td>产品是画面主角；白底直判；使用场景展示（灯串雪地/门廊实景）算；多格产品拼图（6pcs）算；无醒目宣传大标题</td><td>3</td></tr>
-        <tr><td>场景图</td><td>场景氛围/人物为主体，产品融入场景；带醒目宣传大标题（如 BRING THE OCEAN）也归此类</td><td>2</td></tr>
-        <tr><td>多场景图</td><td>Suitable for Multiple DIY / Versatile Styling 标题 + 多格独立场景；积分 = 场景数 × 2（特写、白底同款不重复计）</td><td>场景数×2</td></tr>
-        <tr><td>细节图</td><td>主图+特写文字标注（Striped Ribbons/Lifelike...），或纯特写多格拼接（多色细节）</td><td>2</td></tr>
-        <tr><td>产品对比图</td><td>Why Choose Us / VS 标识 + 左右对比（自家 vs 竞品、同场景昼夜）</td><td>2</td></tr>
-        <tr><td>尺寸图</td><td>in/cm 规格标注或 Product Size 标题；标注点 1-7 → 2 / 8-12 → 4 / 13-20+ → 6</td><td>2/4/6</td></tr>
-        <tr><td>电脑端 A+</td><td>文件名含「A+」（或超长图宽≥1800）；竖长图多主题区块；内容 = 独立主题区块（logo/横幅不单算）</td><td>内容数×2.5</td></tr>
-        <tr><td>手机端 A+</td><td>文件名含「手机端」（或超长图宽&lt;1800）；同上</td><td>内容数×1</td></tr>
-        <tr><td>视频</td><td>按文件格式判定（mp4/mov/avi/mkv/webm 等），不读取视频内容；双格播放复核</td><td>3</td></tr>
-        <tr><td>视频封面</td><td>文件名含「封面/poster/thumbnail」的图片，随视频交付，不算积分</td><td>0</td></tr>
-        <tr><td>无法判定</td><td>主图+特写混合、计数不可靠等 → 转人工，AI 不给猜分</td><td>人工</td></tr>
+        <tr data-k="main"><td>主图</td><td>产品是画面主角；白底直判；使用场景展示（灯串雪地/门廊实景）算；多格产品拼图（6pcs）算；无醒目宣传大标题</td><td class="rule-pts">3</td></tr>
+        <tr data-k="scene"><td>场景图</td><td>场景氛围/人物为主体，产品融入场景；带醒目宣传大标题（如 BRING THE OCEAN）也归此类</td><td class="rule-pts">2</td></tr>
+        <tr data-k="mscene"><td>多场景图</td><td>Suitable for Multiple DIY / Versatile Styling 标题 + 多格独立场景；积分 = 场景数 × 单价（特写、白底同款不重复计）</td><td class="rule-pts">场景数×2</td></tr>
+        <tr data-k="detail"><td>细节图</td><td>主图+特写文字标注（Striped Ribbons/Lifelike...），或纯特写多格拼接（多色细节）</td><td class="rule-pts">2</td></tr>
+        <tr data-k="compare"><td>产品对比图</td><td>Why Choose Us / VS 标识 + 左右对比（自家 vs 竞品、同场景昼夜）</td><td class="rule-pts">2</td></tr>
+        <tr data-k="size"><td>尺寸图</td><td>in/cm 规格标注或 Product Size 标题；标注点 1-7 → 低 / 8-12 → 中 / 13-20+ → 高</td><td class="rule-pts">2/4/6</td></tr>
+        <tr data-k="apd"><td>电脑端 A+</td><td>文件名含「A+」（或超长图宽≥1800）；竖长图多主题区块；内容 = 独立主题区块（logo/横幅不单算）</td><td class="rule-pts">内容数×2.5</td></tr>
+        <tr data-k="apm"><td>手机端 A+</td><td>文件名含「手机端」（或超长图宽&lt;1800）；同上</td><td class="rule-pts">内容数×1</td></tr>
+        <tr data-k="video"><td>视频</td><td>按文件格式判定（mp4/mov/avi/mkv/webm 等），不读取视频内容；双格播放复核</td><td class="rule-pts">3</td></tr>
+        <tr data-k="cover"><td>视频封面</td><td>文件名含「封面/poster/thumbnail」的图片，随视频交付，不算积分</td><td class="rule-pts">0</td></tr>
+        <tr data-k="review"><td>无法判定</td><td>主图+特写混合、计数不可靠等 → 转人工，AI 不给猜分</td><td class="rule-pts">人工</td></tr>
       </tbody>
     </table>
     <div class="footnote">判定顺序：①规格信号→尺寸图 ②A+文件名/长图→A+ ③Multiple DIY→多场景图 ④Why Choose Us/VS→对比图 ⑤特写结构→细节图 ⑥醒目大标题→场景图 ⑦白底→主图 ⑧背景干净+产品占主体→主图（可能是细节特写，需复核）⑨背景复杂→场景氛围图（场景展示型主图会被误判，请人工改判）⑩兜底→无法判定</div>
@@ -993,6 +993,10 @@ function pullSharedCal(){
     local.forEach(function(x){ if(x&&x.name) has[x.name]=1; });
     items.forEach(function(it){
       if(!it || !it.name) return;
+      /* 按系统隔离：希音只收 shein| 前缀，亚马逊跳过 shein| 前缀 */
+      var pre=sysPrefix(), nm=String(it.name);
+      if(pre){ if(nm.indexOf(pre)!==0) return; }
+      else if(nm.indexOf('shein|')===0) return;
       var rec={name:it.name, type:it.type, typeName:it.typeName||'', contentN:it.contentN||0, points:it.points||0, note:it.note||'', time:it.time||0};
       if(it.marks) rec.marks=it.marks;
       if(!has[it.name]){
@@ -1055,6 +1059,10 @@ function pullLanCal(){
     local.forEach(function(x){ if(x&&x.name) has[x.name]=1; });
     items.forEach(function(it){
       if(!it || !it.name) return;
+      /* 按系统隔离：希音只收 shein| 前缀，亚马逊跳过 shein| 前缀 */
+      var pre=sysPrefix(), nm=String(it.name);
+      if(pre){ if(nm.indexOf(pre)!==0) return; }
+      else if(nm.indexOf('shein|')===0) return;
       var rec={name:it.name, type:it.type, typeName:it.typeName||'', contentN:it.contentN||0, points:it.points||0, note:it.note||'', time:it.time||0};
       if(it.marks) rec.marks=it.marks;
       if(!has[it.name]){
@@ -1079,7 +1087,7 @@ function pullLanCal(){
 }
 function pushLanCal(r){
   if(!lanOn() || !r || !r.name) return;
-  var rec={name:r.rel||r.name, type:r.finalType, typeName:typeNameOf(r.finalType), contentN:r.contentN||0, points:r.finalPoints, note:r.note||''};
+  var rec={name:sysPrefix()+(r.rel||r.name), type:r.finalType, typeName:typeNameOf(r.finalType), contentN:r.contentN||0, points:r.finalPoints, note:r.note||''};
   if(r.marks && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))) rec.marks=r.marks;
   lanFetch('/calibration','POST',{items:[rec]}).then(function(d){
     var st=$('lanState'); if(st) st.textContent='已写入局域网库：'+r.name;
@@ -1091,7 +1099,7 @@ function pushLanAll(){
   var items=[];
   results.forEach(function(r){
     if(!r || !r.name) return;
-    var rec={name:r.rel||r.name, type:r.finalType, typeName:typeNameOf(r.finalType), contentN:r.contentN||0, points:r.finalPoints, note:r.note||''};
+    var rec={name:sysPrefix()+(r.rel||r.name), type:r.finalType, typeName:typeNameOf(r.finalType), contentN:r.contentN||0, points:r.finalPoints, note:r.note||''};
     if(r.marks && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))) rec.marks=r.marks;
     items.push(rec);
   });
@@ -1770,7 +1778,30 @@ btnExportHtml.addEventListener('click', function(){
   });
 });
 /* 规则弹层 */
-$('btnRules').addEventListener('click', function(){ ruleMask.style.display='flex'; var c=$('calLogState'); if(c) c.textContent=calCount()+' 条'; });
+/* 规则速查：标题与积分随当前系统动态显示 */
+function renderRuleTable(){
+  var t=$('ruleTitle');
+  if(t) t.textContent=SYS_NAMES[CUR_SYS]+'判定规则';
+  var cfg=ptsCfg(CUR_SYS);
+  var map={
+    main: String(cfg.main),
+    scene: String(cfg.scene),
+    mscene: '场景数×'+cfg.mscenePer,
+    detail: String(cfg.detail),
+    compare: String(cfg.compare),
+    size: cfg.sizeLow+' / '+cfg.sizeMid+' / '+cfg.sizeHigh,
+    apd: '内容数×'+cfg.apdPer,
+    apm: '内容数×'+cfg.apmPer,
+    video: String(cfg.video),
+    cover: String(cfg.cover),
+    review: '人工'
+  };
+  document.querySelectorAll('#ruleMask tr[data-k]').forEach(function(tr){
+    var c=tr.querySelector('.rule-pts');
+    if(c && map[tr.getAttribute('data-k')]!==undefined) c.textContent=map[tr.getAttribute('data-k')];
+  });
+}
+$('btnRules').addEventListener('click', function(){ renderRuleTable(); ruleMask.style.display='flex'; var c=$('calLogState'); if(c) c.textContent=calCount()+' 条'; });
 $('btnClearCal').addEventListener('click', clearCalLog);
 $('btnPullCal').addEventListener('click', pullSharedCal);
 $('btnExportCal').addEventListener('click', exportSharedCal);
