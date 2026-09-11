@@ -1033,8 +1033,19 @@ function exportSharedCal(){
 function autoPullSharedCal(){ pullSharedCal(); }
 /* ========== 局域网同步（MySQL 实时共享：打开自动拉取，复核自动写回） ========== */
 var LAN_KEY='imgScoreLanCfg';
-function getLanCfg(){ try{ return JSON.parse(localStorage.getItem(LAN_KEY)||'{}'); }catch(e){ return {}; } }
-function setLanCfg(o){ try{ localStorage.setItem(LAN_KEY, JSON.stringify(o)); }catch(e){} }
+/* 配置按系统独立（amazon/shein 各自地址与开关），旧版单配置自动迁移 */
+function getLanCfg(){
+  try{
+    var c=JSON.parse(localStorage.getItem(LAN_KEY)||'{}');
+    if(c && c.url!==undefined && c[CUR_SYS]===undefined){
+      var m={}; m[CUR_SYS]={url:c.url||'', on:!!c.on};
+      localStorage.setItem(LAN_KEY, JSON.stringify(m));
+      return m[CUR_SYS];
+    }
+    return (c[CUR_SYS]||{});
+  }catch(e){ return {}; }
+}
+function setLanCfg(o){ try{ var c=JSON.parse(localStorage.getItem(LAN_KEY)||'{}'); c[CUR_SYS]=o; localStorage.setItem(LAN_KEY, JSON.stringify(c)); }catch(e){} }
 function lanUrl(){ return (getLanCfg().url||'').replace(/\/+$/,''); }
 function lanOn(){ return !!getLanCfg().on; }
 function lanFetch(path, method, body){
