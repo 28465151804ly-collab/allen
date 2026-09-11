@@ -25,7 +25,7 @@
   .pts-row{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:5px 10px;margin-bottom:6px;background:#FBFAF7;}
   .pts-row .pts-name{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .pts-row .pts-pts{width:64px;text-align:center;font-weight:600;font-size:13px;}
-  .pts-row .pts-act{width:64px;text-align:center;}
+  .pts-row .pts-act{width:126px;text-align:center;white-space:nowrap;}
   .pts-row input{width:100%;padding:5px 6px;border:1px solid var(--accent);border-radius:8px;font-size:13px;box-sizing:border-box;}
   .pts-row input.pts-pts-in{width:64px;text-align:center;}
   header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
@@ -251,8 +251,9 @@
 <div class="mask" id="ptsMask" style="display:none;">
   <div class="panel" style="max-width:640px;">
     <div class="panel-hd"><b id="ptsTitle">积分设置</b><span style="font-size:12px;color:var(--sub);font-weight:400;">（点击编辑 → 修改 → 保存即生效）</span><button class="btn" id="ptsClose" style="padding:4px 12px;">关闭</button></div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);font-weight:600;padding:2px 10px;margin-bottom:4px;"><span style="flex:1;">图类型</span><span style="width:64px;text-align:center;">积分</span><span style="width:64px;text-align:center;">操作</span></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);font-weight:600;padding:2px 10px;margin-bottom:4px;"><span style="flex:1;">图类型</span><span style="width:64px;text-align:center;">积分</span><span style="width:126px;text-align:center;">操作</span></div>
     <div id="ptsList"></div>
+    <div id="ptsDelWrap"></div>
     <div class="footnote" style="margin-top:8px;font-size:12px;color:var(--sub);">内置类型：多场景图/电脑端A+/手机端A+ 按"每内容(场景)"单价计；尺寸图按标注点数分三档；视频按支计、视频封面 0 分。</div>
     <div style="margin-top:14px;font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px;">自定义类型 <span style="font-size:11px;color:var(--sub);font-weight:400;">（新增的类型会出现在复核下拉框中，例如"细节标准图"）</span></div>
     <div id="ptsCustomWrap" style="margin-top:8px;"></div>
@@ -1425,7 +1426,7 @@ function renderFilters(){
   var customDefs=[];
   customTypes(CUR_SYS).forEach(function(ct){ if(counts[ct.id]) customDefs.push([ct.id, ct.name+' '+counts[ct.id]]); });
   var defs=[['all','全部 '+counts.all],['needReview','待复核 '+counts.needReview]]
-    .concat(Object.keys(TYPES).map(function(k){ return [k, typeNameOf(k)+' '+counts[k]]; }))
+    .concat(Object.keys(TYPES).filter(function(k){ return !isDelType(k) || counts[k]>0; }).map(function(k){ return [k, typeNameOf(k)+' '+counts[k]]; }))
     .concat(customDefs);
   filtersEl.innerHTML='';
   defs.forEach(function(d){
@@ -1511,6 +1512,7 @@ function bindRowEvents(tr, r){
 function typeOptions(cur){
   var html='';
   Object.keys(TYPES).forEach(function(k){
+    if(isDelType(k)){ if(cur!==k) return; }
     html+='<option value="'+k+'"'+(cur===k?' selected':'')+'>'+typeNameOf(k)+'</option>';
   });
   customTypes(CUR_SYS).forEach(function(ct){
@@ -2010,6 +2012,17 @@ function saveCustomTypes(sys, arr){
   c[sys].custom=arr;
   localStorage.setItem(POINTS_LS, JSON.stringify(c));
 }
+function delTypes(sys){
+  var c={}; try{ c=JSON.parse(localStorage.getItem(POINTS_LS)||'{}'); }catch(e){}
+  return (c[sys]||{}).del || [];
+}
+function saveDelTypes(sys, arr){
+  var c={}; try{ c=JSON.parse(localStorage.getItem(POINTS_LS)||'{}'); }catch(e){}
+  if(!c[sys]) c[sys]={};
+  c[sys].del=arr;
+  localStorage.setItem(POINTS_LS, JSON.stringify(c));
+}
+function isDelType(k){ return delTypes(CUR_SYS).indexOf(k)>=0; }
 function typeNameOf(t){
   if(TYPES[t]){
     var nm=ptsNames(CUR_SYS)[t];
@@ -2054,6 +2067,12 @@ function initSys(){
     var row=btn.closest('.pts-row'); if(!row) return;
     var key=row.getAttribute('data-k');
     var nameEl=row.querySelector('.pts-name'), ptsEl=row.querySelector('.pts-pts');
+    if(btn.classList.contains('pts-del')){
+      if(!confirm('删除图类型「'+typeNameOf(key)+'」？已复核的历史记录不受影响，可在下方随时恢复')) return;
+      var dels=delTypes(CUR_SYS); dels.push(key); saveDelTypes(CUR_SYS,dels);
+      renderPts(); renderAll();
+      return;
+    }
     if(btn.textContent==='编辑'){
       var cfg=ptsCfg(CUR_SYS), nm=ptsNames(CUR_SYS);
       nameEl.outerHTML='<input class="pts-name-in" value="'+esc(nm[key]||PTS_ROWS.filter(function(r){return r[0]===key;})[0][1])+'">';
@@ -2071,6 +2090,14 @@ function initSys(){
       results.forEach(function(r){ if(r.finalType!=='review') r.finalPoints=pointOf(r.finalType, r.contentN||0); });
       renderPts(); renderAll();
     }
+  });
+  /* 已删除类型：恢复 */
+  $('ptsDelWrap').addEventListener('click', function(e){
+    var a=e.target.closest('.pts-restore'); if(!a) return;
+    var k=a.getAttribute('data-k');
+    var dels=delTypes(CUR_SYS).filter(function(x){ return x!==k; });
+    saveDelTypes(CUR_SYS, dels);
+    renderPts();
   });
   /* 自定义类型：添加 / 编辑 / 删除（事件委托） */
   $('btnPtsAdd').addEventListener('click', function(){
@@ -2129,13 +2156,21 @@ function renderPts(){
   var cfg=ptsCfg(CUR_SYS); var nm=ptsNames(CUR_SYS);
   PTS_ROWS.forEach(function(row){
     var key=row[0];
+    if(isDelType(key)) return;
     var name=nm[key] || row[1];
     var div=document.createElement('div');
     div.className='pts-row';
     div.setAttribute('data-k', key);
-    div.innerHTML='<span class="pts-name" title="'+esc(name)+'">'+esc(name)+'</span><span class="pts-pts">'+cfg[key]+'</span><span class="pts-act"><button class="btn" style="padding:2px 12px;font-size:12px;">编辑</button></span>';
+    div.innerHTML='<span class="pts-name" title="'+esc(name)+'">'+esc(name)+'</span><span class="pts-pts">'+cfg[key]+'</span><span class="pts-act"><button class="btn" style="padding:2px 10px;font-size:12px;">编辑</button><button class="btn pts-del" style="padding:2px 10px;font-size:12px;color:var(--err);margin-left:4px;">删除</button></span>';
     list.appendChild(div);
   });
+  /* 已删除类型区（可恢复） */
+  var dw=$('ptsDelWrap'); dw.innerHTML='';
+  var dels=delTypes(CUR_SYS);
+  if(dels.length){
+    var names=dels.map(function(k){ return '<span style="text-decoration:line-through;color:var(--sub);">'+esc(typeNameOf(k))+'</span> <a href="javascript:;" class="pts-restore" data-k="'+k+'" style="color:var(--accent);">恢复</a>'; });
+    dw.innerHTML='<div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;color:var(--sub);">已删除类型：'+names.join('　')+'</div>';
+  }
 }
 
 bindHeaderFilters();
