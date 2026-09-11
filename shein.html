@@ -112,6 +112,7 @@
   .badge.apd{background:rgba(162,221,170,.22);color:#3C8A4E;}
   .badge.apm{background:rgba(162,221,170,.22);color:#3C8A4E;}
   .badge.review{background:rgba(234,102,104,.14);color:var(--err);}
+  .badge.custom{background:rgba(139,200,234,.12);color:#5A6B7A;border:1px dashed rgba(139,200,234,.6);}
   .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .empty{padding:36px 0;text-align:center;color:var(--sub);font-size:13px;}
   .modal-mask{position:fixed;inset:0;background:rgba(20,20,20,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
@@ -245,13 +246,16 @@
 
 <!-- 积分设置弹层 -->
 <div class="mask" id="ptsMask" style="display:none;">
-  <div class="panel">
+  <div class="panel" style="max-width:640px;">
     <div class="panel-hd"><b id="ptsTitle">积分设置</b><span style="font-size:12px;color:var(--sub);font-weight:400;">（点击编辑 → 修改 → 保存即生效）</span><button class="btn" id="ptsClose" style="padding:4px 12px;">关闭</button></div>
     <table id="ptsTable">
       <thead><tr><th>图类型</th><th style="width:96px;">积分</th><th style="width:86px;">操作</th></tr></thead>
       <tbody id="ptsTbody"></tbody>
     </table>
-    <div class="footnote" style="margin-top:10px;font-size:12px;color:var(--sub);">说明：多场景图/电脑端A+/手机端A+ 按"每内容(场景)"单价计；尺寸图按标注点数分三档；视频按支计、视频封面 0 分。积分修改后立即生效并自动重算当前列表。</div>
+    <div class="footnote" style="margin-top:8px;font-size:12px;color:var(--sub);">内置类型：多场景图/电脑端A+/手机端A+ 按"每内容(场景)"单价计；尺寸图按标注点数分三档；视频按支计、视频封面 0 分。</div>
+    <div style="margin-top:14px;font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px;">自定义类型 <span style="font-size:11px;color:var(--sub);font-weight:400;">（新增的类型会出现在复核下拉框中，例如"细节标准图"）</span></div>
+    <div id="ptsCustomWrap" style="margin-top:8px;"></div>
+    <button class="btn" id="btnPtsAdd" style="margin-top:10px;border-style:dashed;color:#2B5B7A;">＋ 添加类型</button>
   </div>
 </div>
 
@@ -906,7 +910,7 @@ function saveCalLog(r){
     if(!r || !r.name) return;
     var key=sysPrefix()+(r.rel||r.name);
     var arr=JSON.parse(localStorage.getItem(CAL_KEY)||'[]');
-    var rec={name:key, type:r.finalType, typeName:TYPES[r.finalType].name,
+    var rec={name:key, type:r.finalType, typeName:typeNameOf(r.finalType),
              contentN:r.contentN||0, points:r.finalPoints, note:r.note||'', time:Date.now()};
     if(r.marks && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))) rec.marks=r.marks;
     var i=-1;
@@ -1074,7 +1078,7 @@ function pullLanCal(){
 }
 function pushLanCal(r){
   if(!lanOn() || !r || !r.name) return;
-  var rec={name:r.rel||r.name, type:r.finalType, typeName:TYPES[r.finalType].name, contentN:r.contentN||0, points:r.finalPoints, note:r.note||''};
+  var rec={name:r.rel||r.name, type:r.finalType, typeName:typeNameOf(r.finalType), contentN:r.contentN||0, points:r.finalPoints, note:r.note||''};
   if(r.marks && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))) rec.marks=r.marks;
   lanFetch('/calibration','POST',{items:[rec]}).then(function(d){
     var st=$('lanState'); if(st) st.textContent='已写入局域网库：'+r.name;
@@ -1086,7 +1090,7 @@ function pushLanAll(){
   var items=[];
   results.forEach(function(r){
     if(!r || !r.name) return;
-    var rec={name:r.rel||r.name, type:r.finalType, typeName:TYPES[r.finalType].name, contentN:r.contentN||0, points:r.finalPoints, note:r.note||''};
+    var rec={name:r.rel||r.name, type:r.finalType, typeName:typeNameOf(r.finalType), contentN:r.contentN||0, points:r.finalPoints, note:r.note||''};
     if(r.marks && ((r.marks.paths&&r.marks.paths.length)||(r.marks.texts&&r.marks.texts.length))) rec.marks=r.marks;
     items.push(rec);
   });
@@ -1332,7 +1336,7 @@ function aiReview(){
 /* ========== 渲染 ========== */
 function typeBadge(t){
   var map={main:'main',scene:'scene',mscene:'mscene',detail:'detail',compare:'compare',size:'size',apd:'apd',apm:'apm',review:'review'};
-  return '<span class="badge '+map[t]+'">'+TYPES[t].name+'</span>';
+  return '<span class="badge '+(map[t]||'custom')+'">'+typeNameOf(t)+'</span>';
 }
 function renderAll(){
   renderStats(); renderTable(); renderFilters(); refreshHeaderFilterOptions();
@@ -1366,7 +1370,7 @@ function refreshHeaderFilterOptions(){
     if(f==='type'||f==='revType'){ keys=H_TYPE_ORDER.filter(function(t){ return map[f][t]; }); }
     else{ keys.sort(function(a,b){ return parseFloat(b)-parseFloat(a); }); }
     keys.forEach(function(v){
-      var o=document.createElement('option'); o.value=v; o.textContent=TYPES[v]?TYPES[v].name:v; sel.appendChild(o);
+      var o=document.createElement('option'); o.value=v; o.textContent=TYPES[v]?TYPES[v].name:typeNameOf(v); sel.appendChild(o);
     });
     sel.value=cur;
   });
@@ -1409,8 +1413,11 @@ function renderFilters(){
   var counts={all:results.length,needReview:0};
   Object.keys(TYPES).forEach(function(k){ counts[k]=0; });
   results.forEach(function(r){ counts[r.finalType]=(counts[r.finalType]||0)+1; if(r.needReview||r.conf==='low'||r.type==='review') counts.needReview++; });
+  var customDefs=[];
+  customTypes(CUR_SYS).forEach(function(ct){ if(counts[ct.id]) customDefs.push([ct.id, ct.name+' '+counts[ct.id]]); });
   var defs=[['all','全部 '+counts.all],['needReview','待复核 '+counts.needReview]]
-    .concat(Object.keys(TYPES).map(function(k){ return [k, TYPES[k].name+' '+counts[k]]; }));
+    .concat(Object.keys(TYPES).map(function(k){ return [k, TYPES[k].name+' '+counts[k]]; }))
+    .concat(customDefs);
   filtersEl.innerHTML='';
   defs.forEach(function(d){
     var c=document.createElement('button');
@@ -1467,16 +1474,21 @@ function bindRowEvents(tr, r){
     r.finalType=sel.value;
     if(sel.value==='apd'||sel.value==='apm'){
       var n=Math.max(1,parseInt(nn.value,10)||1);
-      r.contentN=n; r.finalPoints=(sel.value==='apm'? n*1 : n*2.5);
+      r.contentN=n; r.finalPoints=(sel.value==='apm'? n*P('apmPer') : n*P('apdPer'));
       np.value=r.finalPoints;
     } else if(sel.value==='mscene'){
       var s=Math.max(1,parseInt(nn.value,10)||1);
-      r.contentN=s; r.finalPoints=s*2;
+      r.contentN=s; r.finalPoints=s*P('mscenePer');
       np.value=r.finalPoints;
     } else if(sel.value==='size'){
       // 尺寸图按标注点数分档，人工可给中间值：保持当前数值由人工填
+    } else if(String(sel.value).indexOf('c_')===0){
+      var ct=null;
+      customTypes(CUR_SYS).forEach(function(x){ if(x.id===sel.value) ct=x; });
+      r.finalPoints = ct ? ct.points : 2;
+      np.value=r.finalPoints;
     } else if(TYPES[sel.value]){
-      r.finalPoints=TYPES[sel.value].points;
+      r.finalPoints=pointOf(sel.value, r.contentN||0);
       np.value=r.finalPoints;
     }
     r.note=note.value;
@@ -1491,6 +1503,9 @@ function typeOptions(cur){
   var html='';
   Object.keys(TYPES).forEach(function(k){
     html+='<option value="'+k+'"'+(cur===k?' selected':'')+'>'+TYPES[k].name+'</option>';
+  });
+  customTypes(CUR_SYS).forEach(function(ct){
+    html+='<option value="'+ct.id+'"'+(cur===ct.id?' selected':'')+'>'+ct.name+'</option>';
   });
   return html;
 }
@@ -1540,7 +1555,7 @@ btnExport.addEventListener('click', function(){
   pushLanAll();
   var rows=[['文件名','商品编码','相对路径','AI判定','AI积分','置信度','复核类型','内容/场景数','复核积分','备注']];
   results.forEach(function(r){
-    rows.push([r.name, extractSKU(r.rel), r.rel, TYPES[r.type].name, r.points, confTxt(r.conf), TYPES[r.finalType].name, r.contentN||'', r.finalPoints, r.note||'']);
+    rows.push([r.name, extractSKU(r.rel), r.rel, TYPES[r.type]?TYPES[r.type].name:typeNameOf(r.type), r.points, confTxt(r.conf), typeNameOf(r.finalType), r.contentN||'', r.finalPoints, r.note||'']);
   });
   var csv=rows.map(function(r){
     return r.map(function(c){ return '"'+String(c==null?'':c).replace(/"/g,'""')+'"'; }).join(',');
@@ -1625,7 +1640,7 @@ btnExportHtml.addEventListener('click', function(){
     var emu=Math.round(220*9525);
     items.forEach(function(it,i){
       var r=it.r;
-      var cells=[String(i+1), r.name, extractSKU(r.rel), r.rel||'', r.type==='video'? '【视频文件，本地查看】': '', TYPES[r.type].name, String(r.points), confTxt(r.conf), r.sigText||'', TYPES[r.finalType].name, r.contentN? String(r.contentN):'', String(r.finalPoints), r.note||''];
+      var cells=[String(i+1), r.name, extractSKU(r.rel), r.rel||'', r.type==='video'? '【视频文件，本地查看】': '', TYPES[r.type]?TYPES[r.type].name:typeNameOf(r.type), String(r.points), confTxt(r.conf), r.sigText||'', typeNameOf(r.finalType), r.contentN? String(r.contentN):'', String(r.finalPoints), r.note||''];
       var cs='';
       cells.forEach(function(cv, ci){
         cs+='<c r="'+String.fromCharCode(65+ci)+(i+2)+'" t="inlineStr"><is><t>'+esc(cv)+'</t></is></c>';
@@ -1943,13 +1958,49 @@ function savePtsCfg(sys, cfg){
   c[sys]=cfg;
   localStorage.setItem(POINTS_LS, JSON.stringify(c));
 }
+function customTypes(sys){
+  var c={}; try{ c=JSON.parse(localStorage.getItem(POINTS_LS)||'{}'); }catch(e){}
+  return (c[sys]||{}).custom || [];
+}
+function saveCustomTypes(sys, arr){
+  var c={}; try{ c=JSON.parse(localStorage.getItem(POINTS_LS)||'{}'); }catch(e){}
+  if(!c[sys]) c[sys]={};
+  c[sys].custom=arr;
+  localStorage.setItem(POINTS_LS, JSON.stringify(c));
+}
+function typeNameOf(t){
+  if(TYPES[t]) return TYPES[t].name;
+  if(String(t).indexOf('c_')===0){
+    var arr=customTypes(CUR_SYS);
+    for(var i=0;i<arr.length;i++){ if(arr[i].id===t) return arr[i].name; }
+  }
+  return t;
+}
+function renderPtsCustom(){
+  var wrap=$('ptsCustomWrap'); wrap.innerHTML='';
+  var arr=customTypes(CUR_SYS);
+  if(!arr.length){
+    wrap.innerHTML='<div style="font-size:12px;color:var(--sub);padding:8px 2px;">暂无自定义类型，点击下方"＋ 添加类型"新增</div>';
+    return;
+  }
+  arr.forEach(function(ct, idx){
+    var div=document.createElement('div');
+    div.setAttribute('data-i', idx);
+    div.style.cssText='display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:#FBFAF7;';
+    div.innerHTML='<span style="flex:1;font-size:13px;font-weight:600;">'+esc(ct.name)+'</span>'
+      +'<span style="width:80px;text-align:center;font-size:13px;font-weight:600;">'+ct.points+' 分</span>'
+      +'<button class="btn ct-edit" style="padding:2px 10px;font-size:12px;">编辑</button>'
+      +'<button class="btn ct-del" style="padding:2px 10px;font-size:12px;color:var(--err);">删除</button>';
+    wrap.appendChild(div);
+  });
+}
 function initSys(){
   var badge=$('sysBadge');
   badge.textContent=SYS_NAMES[CUR_SYS]+'积分系统';
   if(CUR_SYS==='shein') badge.className='sys-badge shein';
   document.title='判图积分系统 - '+SYS_NAMES[CUR_SYS];
   $('ptsTitle').textContent=SYS_NAMES[CUR_SYS]+'积分设置';
-  $('btnPts').addEventListener('click', function(){ renderPts(); $('ptsMask').style.display='flex'; });
+  $('btnPts').addEventListener('click', function(){ renderPts(); renderPtsCustom(); $('ptsMask').style.display='flex'; });
   $('ptsClose').addEventListener('click', function(){ $('ptsMask').style.display='none'; });
   $('ptsMask').addEventListener('click', function(e){ if(e.target===$('ptsMask')) $('ptsMask').style.display='none'; });
   $('ptsTbody').addEventListener('click', function(e){
@@ -1971,6 +2022,57 @@ function initSys(){
       renderPts(); renderAll();
     }
   });
+  /* 自定义类型：添加 / 编辑 / 删除（事件委托） */
+  $('btnPtsAdd').addEventListener('click', function(){
+    var arr=customTypes(CUR_SYS);
+    arr.push({id:'c_'+Date.now(), name:'新类型'+(arr.length+1), points:2});
+    saveCustomTypes(CUR_SYS, arr);
+    renderPtsCustom();
+    editCustomRow(arr.length-1);
+  });
+  $('ptsCustomWrap').addEventListener('click', function(e){
+    var btn=e.target;
+    if(!btn || btn.tagName!=='BUTTON') return;
+    var div=btn.closest('div[data-i]');
+    if(!div) return;
+    var idx=parseInt(div.getAttribute('data-i'),10);
+    var arr=customTypes(CUR_SYS);
+    if(btn.classList.contains('ct-del')){
+      if(!confirm('删除自定义类型「'+arr[idx].name+'」？历史复核记录不受影响')) return;
+      arr.splice(idx,1);
+      saveCustomTypes(CUR_SYS, arr);
+      renderPtsCustom();
+      return;
+    }
+    if(btn.classList.contains('ct-edit')){ editCustomRow(idx); }
+  });
+}
+function editCustomRow(idx){
+  var arr=customTypes(CUR_SYS);
+  var ct=arr[idx];
+  if(!ct) return;
+  var div=document.createElement('div');
+  div.setAttribute('data-i', idx);
+  div.style.cssText='display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--accent);border-radius:10px;margin-bottom:6px;background:#F3FAFF;';
+  div.innerHTML='<input class="ct-name" value="'+esc(ct.name)+'" placeholder="类型名称" style="flex:1;padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px;">'
+    +'<input class="ct-pts" type="number" step="0.5" min="0" value="'+ct.points+'" style="width:80px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px;text-align:center;">'
+    +'<button class="btn ct-save" style="padding:2px 12px;font-size:12px;background:#52C41A;color:#fff;border-color:#52C41A;">保存</button>'
+    +'<button class="btn ct-cancel" style="padding:2px 10px;font-size:12px;">取消</button>';
+  var wrap=$('ptsCustomWrap');
+  var old=wrap.children[idx];
+  if(old) wrap.replaceChild(div, old); else wrap.appendChild(div);
+  div.querySelector('.ct-save').addEventListener('click', function(){
+    var name=div.querySelector('.ct-name').value.trim();
+    var pts=parseFloat(div.querySelector('.ct-pts').value);
+    if(!name){ div.querySelector('.ct-name').focus(); return; }
+    if(isNaN(pts)||pts<0){ div.querySelector('.ct-pts').focus(); return; }
+    var arr2=customTypes(CUR_SYS);
+    var cur=arr2[idx]; if(!cur) return;
+    cur.name=name; cur.points=pts;
+    saveCustomTypes(CUR_SYS, arr2);
+    renderPtsCustom();
+  });
+  div.querySelector('.ct-cancel').addEventListener('click', function(){ renderPtsCustom(); });
 }
 function renderPts(){
   var tbody=$('ptsTbody'); tbody.innerHTML='';
