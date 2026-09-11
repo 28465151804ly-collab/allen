@@ -253,11 +253,9 @@
     <div class="panel-hd"><b id="ptsTitle">积分设置</b><span style="font-size:12px;color:var(--sub);font-weight:400;">（点击编辑 → 修改 → 保存即生效）</span><button class="btn" id="ptsClose" style="padding:4px 12px;">关闭</button></div>
     <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);font-weight:600;padding:2px 10px;margin-bottom:4px;"><span style="flex:1;">图类型</span><span style="width:64px;text-align:center;">积分</span><span style="width:126px;text-align:center;">操作</span></div>
     <div id="ptsList"></div>
-    <div id="ptsDelWrap"></div>
-    <div class="footnote" style="margin-top:8px;font-size:12px;color:var(--sub);">内置类型：多场景图/电脑端A+/手机端A+ 按"每内容(场景)"单价计；尺寸图按标注点数分三档；视频按支计、视频封面 0 分。</div>
-    <div style="margin-top:14px;font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px;">自定义类型 <span style="font-size:11px;color:var(--sub);font-weight:400;">（新增的类型会出现在复核下拉框中，例如"细节标准图"）</span></div>
-    <div id="ptsCustomWrap" style="margin-top:8px;"></div>
     <button class="btn" id="btnPtsAdd" style="margin-top:10px;border-style:dashed;color:#2B5B7A;">＋ 添加类型</button>
+    <div id="ptsDelWrap"></div>
+    <div class="footnote" style="margin-top:8px;font-size:12px;color:var(--sub);">说明：所有图类型都可重命名/改积分/删除（删除后可在"已删除类型"处恢复）；多场景图/电脑端A+/手机端A+ 按"每内容(场景)"单价计；尺寸图按标注点数分三档；视频按支计、视频封面 0 分。</div>
   </div>
 </div>
 
@@ -2034,31 +2032,13 @@ function typeNameOf(t){
   }
   return t;
 }
-function renderPtsCustom(){
-  var wrap=$('ptsCustomWrap'); wrap.innerHTML='';
-  var arr=customTypes(CUR_SYS);
-  if(!arr.length){
-    wrap.innerHTML='<div style="font-size:12px;color:var(--sub);padding:8px 2px;">暂无自定义类型，点击下方"＋ 添加类型"新增</div>';
-    return;
-  }
-  arr.forEach(function(ct, idx){
-    var div=document.createElement('div');
-    div.setAttribute('data-i', idx);
-    div.style.cssText='display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:#FBFAF7;';
-    div.innerHTML='<span style="flex:1;font-size:13px;font-weight:600;">'+esc(ct.name)+'</span>'
-      +'<span style="width:80px;text-align:center;font-size:13px;font-weight:600;">'+ct.points+' 分</span>'
-      +'<button class="btn ct-edit" style="padding:2px 10px;font-size:12px;">编辑</button>'
-      +'<button class="btn ct-del" style="padding:2px 10px;font-size:12px;color:var(--err);">删除</button>';
-    wrap.appendChild(div);
-  });
-}
 function initSys(){
   var badge=$('sysBadge');
   badge.textContent=SYS_NAMES[CUR_SYS]+'积分系统';
   if(CUR_SYS==='shein') badge.className='sys-badge shein';
   document.title='判图积分系统 - '+SYS_NAMES[CUR_SYS];
   $('ptsTitle').textContent=SYS_NAMES[CUR_SYS]+'积分设置';
-  $('btnPts').addEventListener('click', function(){ renderPts(); renderPtsCustom(); $('ptsMask').style.display='flex'; });
+  $('btnPts').addEventListener('click', function(){ renderPts(); $('ptsMask').style.display='flex'; });
   $('ptsClose').addEventListener('click', function(){ $('ptsMask').style.display='none'; });
   $('ptsMask').addEventListener('click', function(e){ if(e.target===$('ptsMask')) $('ptsMask').style.display='none'; });
   $('ptsList').addEventListener('click', function(e){
@@ -2066,30 +2046,54 @@ function initSys(){
     if(!btn || btn.tagName!=='BUTTON') return;
     var row=btn.closest('.pts-row'); if(!row) return;
     var key=row.getAttribute('data-k');
+    var isC = key && String(key).indexOf('c_')===0;
     var nameEl=row.querySelector('.pts-name'), ptsEl=row.querySelector('.pts-pts');
+    /* 删除 */
     if(btn.classList.contains('pts-del')){
-      if(!confirm('删除图类型「'+typeNameOf(key)+'」？已复核的历史记录不受影响，可在下方随时恢复')) return;
-      var dels=delTypes(CUR_SYS); dels.push(key); saveDelTypes(CUR_SYS,dels);
+      if(isC){
+        if(!confirm('删除类型「'+typeNameOf(key)+'」？')) return;
+        var arr=customTypes(CUR_SYS).filter(function(x){ return x.id!==key; });
+        saveCustomTypes(CUR_SYS, arr);
+      } else {
+        if(!confirm('删除图类型「'+typeNameOf(key)+'」？已复核的历史记录不受影响，可在下方随时恢复')) return;
+        var dels=delTypes(CUR_SYS); dels.push(key); saveDelTypes(CUR_SYS,dels);
+      }
       renderPts(); renderAll();
       return;
     }
+    /* 编辑 */
     if(btn.textContent==='编辑'){
-      var cfg=ptsCfg(CUR_SYS), nm=ptsNames(CUR_SYS);
-      nameEl.outerHTML='<input class="pts-name-in" value="'+esc(nm[key]||PTS_ROWS.filter(function(r){return r[0]===key;})[0][1])+'">';
-      ptsEl.outerHTML='<input class="pts-pts-in" type="number" step="0.5" min="0" value="'+cfg[key]+'">';
+      var curName, curPts;
+      if(isC){
+        var ct=null; customTypes(CUR_SYS).forEach(function(x){ if(x.id===key) ct=x; });
+        if(!ct) return; curName=ct.name; curPts=ct.points;
+      } else {
+        var cfg=ptsCfg(CUR_SYS), nm=ptsNames(CUR_SYS);
+        curName=nm[key]||PTS_ROWS.filter(function(r){return r[0]===key;})[0][1];
+        curPts=cfg[key];
+      }
+      nameEl.outerHTML='<input class="pts-name-in" value="'+esc(curName)+'">';
+      ptsEl.outerHTML='<input class="pts-pts-in" type="number" step="0.5" min="0" value="'+curPts+'">';
       btn.textContent='保存'; btn.style.background='#52C41A'; btn.style.color='#fff'; btn.style.borderColor='#52C41A';
-    } else {
-      var inpName=row.querySelector('.pts-name-in');
-      var inpVal=row.querySelector('.pts-pts-in');
-      var name=inpName? inpName.value.trim() : '';
-      var v=parseFloat(inpVal.value);
-      if(!name && inpName){ inpName.focus(); return; }
-      if(isNaN(v)||v<0){ if(inpVal) inpVal.focus(); return; }
-      var cfg=ptsCfg(CUR_SYS); cfg[key]=v; savePtsCfg(CUR_SYS,cfg);
-      if(inpName){ var nm=ptsNames(CUR_SYS); nm[key]=name; savePtsNames(CUR_SYS,nm); }
-      results.forEach(function(r){ if(r.finalType!=='review') r.finalPoints=pointOf(r.finalType, r.contentN||0); });
-      renderPts(); renderAll();
+      return;
     }
+    /* 保存 */
+    var inpName=row.querySelector('.pts-name-in');
+    var inpVal=row.querySelector('.pts-pts-in');
+    var name=inpName? inpName.value.trim() : '';
+    var v=parseFloat(inpVal.value);
+    if(!name && inpName){ inpName.focus(); return; }
+    if(isNaN(v)||v<0){ if(inpVal) inpVal.focus(); return; }
+    if(isC){
+      var arr2=customTypes(CUR_SYS);
+      for(var i=0;i<arr2.length;i++){ if(arr2[i].id===key){ arr2[i].name=name; arr2[i].points=v; } }
+      saveCustomTypes(CUR_SYS, arr2);
+    } else {
+      var cfg2=ptsCfg(CUR_SYS); cfg2[key]=v; savePtsCfg(CUR_SYS,cfg2);
+      if(inpName){ var nm2=ptsNames(CUR_SYS); nm2[key]=name; savePtsNames(CUR_SYS,nm2); }
+    }
+    results.forEach(function(r){ if(r.finalType!=='review') r.finalPoints=pointOf(r.finalType, r.contentN||0); });
+    renderPts(); renderAll();
   });
   /* 已删除类型：恢复 */
   $('ptsDelWrap').addEventListener('click', function(e){
@@ -2099,57 +2103,16 @@ function initSys(){
     saveDelTypes(CUR_SYS, dels);
     renderPts();
   });
-  /* 自定义类型：添加 / 编辑 / 删除（事件委托） */
+  /* 添加类型：加入列表并进入编辑态 */
   $('btnPtsAdd').addEventListener('click', function(){
     var arr=customTypes(CUR_SYS);
-    arr.push({id:'c_'+Date.now(), name:'新类型'+(arr.length+1), points:2});
+    var id='c_'+Date.now();
+    arr.push({id:id, name:'新类型'+(arr.length), points:2});
     saveCustomTypes(CUR_SYS, arr);
-    renderPtsCustom();
-    editCustomRow(arr.length-1);
+    renderPts();
+    var row=document.querySelector('.pts-row[data-k="'+id+'"]');
+    if(row && row.querySelector('button')) row.querySelector('button').click();
   });
-  $('ptsCustomWrap').addEventListener('click', function(e){
-    var btn=e.target;
-    if(!btn || btn.tagName!=='BUTTON') return;
-    var div=btn.closest('div[data-i]');
-    if(!div) return;
-    var idx=parseInt(div.getAttribute('data-i'),10);
-    var arr=customTypes(CUR_SYS);
-    if(btn.classList.contains('ct-del')){
-      if(!confirm('删除自定义类型「'+arr[idx].name+'」？历史复核记录不受影响')) return;
-      arr.splice(idx,1);
-      saveCustomTypes(CUR_SYS, arr);
-      renderPtsCustom();
-      return;
-    }
-    if(btn.classList.contains('ct-edit')){ editCustomRow(idx); }
-  });
-}
-function editCustomRow(idx){
-  var arr=customTypes(CUR_SYS);
-  var ct=arr[idx];
-  if(!ct) return;
-  var div=document.createElement('div');
-  div.setAttribute('data-i', idx);
-  div.style.cssText='display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--accent);border-radius:10px;margin-bottom:6px;background:#F3FAFF;';
-  div.innerHTML='<input class="ct-name" value="'+esc(ct.name)+'" placeholder="类型名称" style="flex:1;padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px;">'
-    +'<input class="ct-pts" type="number" step="0.5" min="0" value="'+ct.points+'" style="width:80px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px;text-align:center;">'
-    +'<button class="btn ct-save" style="padding:2px 12px;font-size:12px;background:#52C41A;color:#fff;border-color:#52C41A;">保存</button>'
-    +'<button class="btn ct-cancel" style="padding:2px 10px;font-size:12px;">取消</button>';
-  var wrap=$('ptsCustomWrap');
-  var old=wrap.children[idx];
-  if(old) wrap.replaceChild(div, old); else wrap.appendChild(div);
-  div.querySelector('.ct-save').addEventListener('click', function(){
-    var name=div.querySelector('.ct-name').value.trim();
-    var pts=parseFloat(div.querySelector('.ct-pts').value);
-    if(!name){ div.querySelector('.ct-name').focus(); return; }
-    if(isNaN(pts)||pts<0){ div.querySelector('.ct-pts').focus(); return; }
-    var arr2=customTypes(CUR_SYS);
-    var cur=arr2[idx]; if(!cur) return;
-    cur.name=name; cur.points=pts;
-    saveCustomTypes(CUR_SYS, arr2);
-    renderPtsCustom();
-  });
-  div.querySelector('.ct-cancel').addEventListener('click', function(){ renderPtsCustom(); });
 }
 function renderPts(){
   var list=$('ptsList'); list.innerHTML='';
@@ -2162,6 +2125,14 @@ function renderPts(){
     div.className='pts-row';
     div.setAttribute('data-k', key);
     div.innerHTML='<span class="pts-name" title="'+esc(name)+'">'+esc(name)+'</span><span class="pts-pts">'+cfg[key]+'</span><span class="pts-act"><button class="btn" style="padding:2px 10px;font-size:12px;">编辑</button><button class="btn pts-del" style="padding:2px 10px;font-size:12px;color:var(--err);margin-left:4px;">删除</button></span>';
+    list.appendChild(div);
+  });
+  /* 自定义类型行（与内置同列表） */
+  customTypes(CUR_SYS).forEach(function(ct){
+    var div=document.createElement('div');
+    div.className='pts-row';
+    div.setAttribute('data-k', ct.id);
+    div.innerHTML='<span class="pts-name" title="'+esc(ct.name)+'">'+esc(ct.name)+'</span><span class="pts-pts">'+ct.points+'</span><span class="pts-act"><button class="btn" style="padding:2px 10px;font-size:12px;">编辑</button><button class="btn pts-del" style="padding:2px 10px;font-size:12px;color:var(--err);margin-left:4px;">删除</button></span>';
     list.appendChild(div);
   });
   /* 已删除类型区（可恢复） */
