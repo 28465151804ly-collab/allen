@@ -904,7 +904,23 @@ function classify(f, meta, sig){
 /* ========== 批量判定 ========== */
 btnRun.addEventListener('click', function(){ runAll(); });
 /* ========== 校准日志（大模型"沉淀"：人工复核结果自动记忆，同名图下次直接沿用） ========== */
-var CAL_KEY='imgScoreCalLog';
+var CAL_KEY='imgScoreCalLog'+(CUR_SYS==='shein'?'_shein':'');
+/* 旧版单键数据迁移：按前缀把属于本系统的记录搬入分键存储（希音记录名带 shein|） */
+(function(){
+  var oldKey='imgScoreCalLog';
+  if(CAL_KEY===oldKey) return;
+  try{
+    var old=JSON.parse(localStorage.getItem(oldKey)||'[]');
+    if(!old.length) return;
+    var cur=JSON.parse(localStorage.getItem(CAL_KEY)||'[]');
+    if(cur.length) return;
+    var mine=old.filter(function(c){ return CUR_SYS==='shein' ? String(c.name||'').indexOf('shein|')===0 : String(c.name||'').indexOf('shein|')!==0; });
+    if(!mine.length) return;
+    localStorage.setItem(CAL_KEY, JSON.stringify(mine));
+    var rest=old.filter(function(c){ return CUR_SYS==='shein' ? String(c.name||'').indexOf('shein|')!==0 : String(c.name||'').indexOf('shein|')===0; });
+    localStorage.setItem(oldKey, JSON.stringify(rest));
+  }catch(e){}
+})();
 function saveCalLog(r){
   try{
     if(!r || !r.name) return;
@@ -1127,7 +1143,10 @@ function syncLanInput(){
 }
 /* 全量同步：把本机积累的全部校准记录一次推入局域网库 */
 function pushLanAllCal(){
-  var arr=calArr();
+  var arr=calArr().filter(function(c){
+    var nm=String(c.name||'');
+    return CUR_SYS==='shein' ? nm.indexOf('shein|')===0 : nm.indexOf('shein|')!==0;
+  });
   if(!arr.length){ var st=$('lanState'); if(st) st.textContent='本地没有校准记录'; return; }
   var items=arr.map(function(c){
     return {name:c.name, type:c.type, typeName:c.typeName||'', contentN:c.contentN||0, points:c.points, note:c.note||''};
