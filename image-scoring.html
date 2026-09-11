@@ -484,27 +484,26 @@ dirInput.addEventListener('change', function(){
     drop.classList.remove('drag');
     var dt=e.dataTransfer;
     if(!dt) return;
-    var handled=false;
-    /* 优先：文件夹递归（webkitGetAsEntry），兼容单文件 */
+    var todo=[];
+    /* 路径1：dt.items 逐项递归（文件夹拆解，兼容单文件） */
     if(dt.items && dt.items.length){
-      var items=dt.items, todo=[];
-      for(var i=0;i<items.length;i++){
-        var it=items[i];
+      for(var i=0;i<dt.items.length;i++){
+        var it=dt.items[i];
         var en = (typeof it.webkitGetAsEntry==='function') ? it.webkitGetAsEntry() : null;
         if(en){ todo.push(scanEntry(en,'')); }
         else if(it.kind==='file' && typeof it.getAsFile==='function'){ todo.push(Promise.resolve([it.getAsFile()])); }
       }
-      if(todo.length){
-        handled=true;
-        Promise.all(todo).then(function(lists){
-          var all=[].concat.apply([],lists);
-          addFiles(all);
-        });
-      }
     }
-    /* 兜底：直接读 files（所有浏览器可靠路径） */
-    if(!handled && dt.files && dt.files.length){
-      addFiles(dt.files);
+    /* 路径2：直接读 dt.files——拖入文件夹/多文件夹时浏览器自动携带全部子文件及相对路径，最可靠 */
+    if(dt.files && dt.files.length){
+      todo.push(Promise.resolve(Array.prototype.slice.call(dt.files)));
+    }
+    /* 两条路径并行，addFiles 按相对路径自动去重 */
+    if(todo.length){
+      Promise.all(todo).then(function(lists){
+        var all=[].concat.apply([],lists);
+        addFiles(all);
+      });
     }
   });
   drop.addEventListener('dragleave', function(){ drop.classList.remove('drag'); });
