@@ -187,12 +187,14 @@
     <div class="toolbar">
       <span style="font-size:12px;color:var(--sub);" id="tableCount"></span>
       <span style="font-size:12px;color:var(--sub);">复核后总积分：<b id="totalFinal" style="font-size:15px;color:var(--text);"></b></span>
+      <span style="flex:1;"></span>
+      <button class="btn" id="btnDelSel" style="padding:3px 14px;font-size:12px;color:var(--err);border-color:var(--err);" title="只删除当前筛选结果中勾选的行">删除勾选</button>
     </div>
     <div class="tbl-wrap">
       <table id="tbl">
         <thead>
           <tr class="h-name">
-            <th>图</th><th>文件名</th><th>商品编码</th><th>AI 判定</th><th>AI 积分</th><th>置信度</th><th>信号摘要</th><th>复核类型</th><th>内容/场景数</th><th>复核积分</th><th>备注</th><th></th>
+            <th style="width:46px;"><label class="sel-all-lb"><input type="checkbox" id="selAll" title="全选当前筛选结果">全选</label></th><th>图</th><th>文件名</th><th>商品编码</th><th>AI 判定</th><th>AI 积分</th><th>置信度</th><th>信号摘要</th><th>复核类型</th><th>内容/场景数</th><th>复核积分</th><th>备注</th><th></th>
           </tr>
           <tr class="h-filter">
             <th></th>
@@ -1413,6 +1415,46 @@ function refreshHeaderFilterOptions(){
     sel.value=cur;
   });
 }
+/* ========== 批量勾选（全选只作用于当前筛选结果，删除也只删筛选后勾选的） ========== */
+var selRows=[];
+function isSel(r){ return selRows.indexOf(r)>=0; }
+function setSel(r,on){ var i=selRows.indexOf(r); if(on&&i<0) selRows.push(r); if(!on&&i>=0) selRows.splice(i,1); }
+function updateSelAll(){
+  var sa=$('selAll'); if(!sa) return;
+  var vis=lastList||[];
+  if(!vis.length){ sa.checked=false; sa.indeterminate=false; }
+  else{
+    var on=0; vis.forEach(function(r){ if(isSel(r)) on++; });
+    sa.checked=(on===vis.length); sa.indeterminate=(on>0&&on<vis.length);
+  }
+  var bt=$('btnDelSel');
+  if(bt){
+    var v=0; (lastList||[]).forEach(function(r){ if(isSel(r)) v++; });
+    bt.textContent=v? '删除勾选（'+v+'）':'删除勾选';
+  }
+}
+/* 全选：只勾选/取消当前筛选可见行，不碰被筛选隐藏的行 */
+function bindSelAll(){
+  var sa=$('selAll'); if(!sa) return;
+  sa.addEventListener('change', function(){
+    var on=sa.checked;
+    (lastList||[]).forEach(function(r){ setSel(r, on); });
+    renderTable();
+  });
+  var bt=$('btnDelSel'); if(!bt) return;
+  bt.addEventListener('click', function(){
+    var vis=(lastList||[]).filter(function(r){ return isSel(r); });
+    if(!vis.length){ return; }
+    if(!confirm('确定删除当前筛选结果中勾选的 '+vis.length+' 条记录？')) return;
+    vis.forEach(function(r){
+      var ri=results.indexOf(r);
+      if(ri>=0) results.splice(ri,1);
+      var si=selRows.indexOf(r); if(si>=0) selRows.splice(si,1);
+      if(r.url) URL.revokeObjectURL(r.url);
+    });
+    persist(); renderAll();
+  });
+}
 function currentList(){
   var list=results;
   if(filterType!=='all'){
@@ -1432,8 +1474,14 @@ function currentList(){
   if(f.note){ var nn=f.note.toLowerCase(); list=list.filter(function(r){ return (r.note||'').toLowerCase().indexOf(nn)>=0; }); }
   return list;
 }
-/* 删除单行：tbody 事件委托 */
+/* 选择 / 删除单行：tbody 事件委托 */
 tbody.addEventListener('click', function(e){
+  var cb=e.target.closest('.rowSel');
+  if(cb){
+    var r=lastList[parseInt(cb.getAttribute('data-idx'),10)];
+    if(r){ setSel(r, cb.checked); updateSelAll(); }
+    return;
+  }
   var b=e.target.closest('.rowDel');
   if(b) delRow(b);
 });
@@ -1442,6 +1490,7 @@ function delRow(btn){
   if(!tr) return;
   var r=lastList[parseInt(tr.getAttribute('data-idx'),10)];
   if(!r) return;
+  var si=selRows.indexOf(r); if(si>=0) selRows.splice(si,1);
   var ri=results.indexOf(r);
   if(ri>=0){ results.splice(ri,1); }
   if(r.url) URL.revokeObjectURL(r.url);
@@ -1471,10 +1520,11 @@ function renderTable(){
   tableCount.textContent='共 '+list.length+' 条';
   var sum=0; results.forEach(function(r){ sum+=r.finalPoints; });
   totalFinal.textContent=sum;
-  if(!list.length){ tbody.innerHTML='<tr><td colspan="12"><div class="empty">暂无数据——上传图片并点击「开始自动判定」</div></td></tr>'; return; }
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="13"><div class="empty">暂无数据——上传图片并点击「开始自动判定」</div></td></tr>'; return; }
   var html='';
   list.forEach(function(r){
     html+='<tr data-idx="'+lastList.indexOf(r)+'">'
+      +'<td style="text-align:center;"><input type="checkbox" class="rowSel" data-idx="'+lastList.indexOf(r)+'"'+(isSel(r)?' checked':'')+'></td>'
       +'<td>'+(r.url? '<div class="thumb-wrap">'
         +(r.type==='video'? '<div class="vthumb" title="视频文件（3积分）"><b>&#9654;</b>视频</div>'
           : '<img class="thumb" src="'+(r.markedThumb||r.url)+'" data-name="'+r.name.replace(/"/g,'&quot;')+'" '+(r.markedThumb?'style="outline:2px solid #ff9f43;"':'')+'>')
@@ -1494,6 +1544,7 @@ function renderTable(){
       +'</tr>';
   });
   tbody.innerHTML=html;
+  updateSelAll();
   Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(tr){
     var r=lastList[parseInt(tr.getAttribute('data-idx'),10)];
     if(r) bindRowEvents(tr, r);
@@ -2180,6 +2231,7 @@ autoPullSharedCal();
 pullLanCal();
 restore();
 initSys();
+bindSelAll();
 })();
 </script>
 </body>
